@@ -1,43 +1,29 @@
 #include "DataControl.h"
 #include <iostream>
-#include <thread>
+
+
 bool DataControl::ready = false;
+vector<string> DataControl::outputData = {""};
 
 void DataControl::localCallback(freenect_device *ldev, void *data, uint32_t time) {
     //std::cout << "Getting stuff\n";
     //DataControl::ready = false;
 
-    short* test = static_cast<short*>(data);
+    short* dataC = static_cast<short*>(data);
+    string output("");
 
-    for (int i=0; i<480; i+=5) {
-        for (int j=0; j<640; j+=5) {
-            if (test[i*j] == 0)
-                std::cout << "x";
-            else if (test[i*j] > 0 && test[i*j] <=500)
-                std::cout << ".";
-            else if (test[i*j] > 500 && test[i*j] <=1000)
-                std::cout << "o";
-            else if (test[i*j] > 1000 && test[i*j] <=1500)
-                std::cout << "O";
-            else if (test[i*j] > 1500 && test[i*j] <=2000)
-                std::cout << "0";
-            else
-                std::cout << "X";
+    //Ouput data to a vector
+    //Should be removed later
+    //////////////////////////////////
+    for (int i=0; i<480; i++) {
+        for (int j=0; j<640; j++) {
+            output.insert(output.length(), to_string(dataC[i*j]) + ",");
         }
-        std::cout << "\n";
     }
-
-
-    for (int i=0; i<480; i+=5) {
-        for (int j=0; j<640; j+=5) {
-            std::cout << "\b";
-        }
-        std::cout << "\b";
-    }
-    //for (int i=0; i<5; i++)
-        //std::cout << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
-    //std::system("clear");
+    outputData.push_back(output);
+    //////////////////////////////////
 }
+
 
 bool DataControl::errorCheck() {
     if (freenect_process_events(ctx) >= 0)
@@ -107,8 +93,6 @@ DataControl::DataControl()
     //Flag to indicated the device is ready and running
     DataControl::ready = true;
     std::cout << "X: Finished initializing the device\n";
-
-    //while (freenect_process_events(ctx) >= 0) {}
 
 }
 
