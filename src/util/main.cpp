@@ -1,8 +1,8 @@
-#include <DataControl.h>
+//#include <DataControl.h>
 #include <iostream>
 #include <signal.h>
 #include <fstream>
-#include <iostream>
+#include <SpinArray.h>
 
 void signalHandler(int signal)
 {
@@ -10,13 +10,14 @@ void signalHandler(int signal)
 	 || signal == SIGTERM
 	 || signal == SIGQUIT)
 	{
-		DataControl::ready = false;
+		//DataControl::ready = false;
 	}
 }
 
 int main(int argc, char** argv) {
 
-
+    SpinArray<int> a(5);
+    /*
     DataControl* to = new DataControl();
 // Handle signals gracefully.
 	signal(SIGINT, signalHandler);
@@ -48,7 +49,8 @@ int main(int argc, char** argv) {
     ////////////////////////////////////////////
 
     delete to;
-    exit(0);
+    */
+    //exit(0);
 }
 
 

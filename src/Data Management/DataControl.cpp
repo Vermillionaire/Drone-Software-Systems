@@ -3,21 +3,22 @@
 
 
 bool DataControl::ready = false;
-vector<string> DataControl::outputData = {""};
+//vector<string> DataControl::outputData = {""};
 
 void DataControl::localCallback(freenect_device *ldev, void *data, uint32_t time) {
     //std::cout << "Getting stuff\n";
-    DataControl::ready = false;
+    //DataControl::ready = false;
 
 
-    uint16_t* dataC = (uint16_t*)data;
-    string output("");
+    //short* dataC = (short*)data;
+    //string output("");
 
     //printf("%d", dataC);
 
-    for (int i=0; i<640*480; i++)
-        printf("(%04X:%d)", dataC[i], dataC[i]);
+    //for (int i=0; i<width*height; i++)
+        //printf("(%04X:%d)", dataC[i], dataC[i]);
 
+    /*
     //Ouput data to a vector
     //Should be removed later
     //////////////////////////////////
@@ -28,6 +29,7 @@ void DataControl::localCallback(freenect_device *ldev, void *data, uint32_t time
     }
     outputData.push_back(output);
     //////////////////////////////////
+    */
 }
 
 
@@ -55,18 +57,21 @@ DataControl::DataControl()
     ret = freenect_num_devices(ctx);
     if (ret < 0) {
         DataControl::ready = false;
+        //freenect_shutdown(ctx);
         return;
 	}
 	else if (ret == 0) {
         DataControl::ready = false;
+        //freenect_shutdown(ctx);
         std::cout << "No Devices were detected\n";
+        return;
 	}
 	std::cout << ret << ": Found devices.\n";
 
     //Open the camera device
 	ret = freenect_open_device(ctx, &dev, 0);
 	if (ret < 0) {
-		freenect_shutdown(ctx);
+		//freenect_shutdown(ctx);
 		DataControl::ready = false;
 		return;
 	}
@@ -79,8 +84,8 @@ DataControl::DataControl()
     //Set the debth options
 	ret = freenect_set_depth_mode( dev, freenect_find_depth_mode(FREENECT_RESOLUTION_MEDIUM, FREENECT_DEPTH_MM));
 	if (ret < 0) {
-		freenect_shutdown(ctx);
-		freenect_close_device(dev);
+		//freenect_shutdown(ctx);
+		//freenect_close_device(dev);
 		DataControl::ready = false;
 		return;
 	}
@@ -89,8 +94,8 @@ DataControl::DataControl()
     //Start the data retrival
     ret = freenect_start_depth(dev);
     if (ret < 0) {
-        freenect_close_device(dev);
-		freenect_shutdown(ctx);
+       //freenect_close_device(dev);
+		//freenect_shutdown(ctx);
 		DataControl::ready = false;
 		return;
 	}
