@@ -1,8 +1,12 @@
 #include "libfreenect.h"
+#include "SpinArray.h"
 #include <vector>
 #include <string>
 
+
+
 using namespace std;
+class SpinArray;
 
 class DataControl
 {
@@ -16,23 +20,18 @@ class DataControl
         const static short width = 640;
         const static short height = 480;
 
-        //Depth point. Contains the z value, pixel locations i and j, and the time
-        struct DPoint {
-            short depth;
-            short i;
-            short j;
-            long time;
-        };
-
         struct frame {
             short pixel[width][height];
         };
 
+        static SpinArray buff;
+
         //Temperary variables and functions
         static vector<string> outputData;
+
+        static long frames;
     private:
+
         freenect_context* ctx;
         freenect_device* dev;
-
-
 };

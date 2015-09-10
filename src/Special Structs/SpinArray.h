@@ -1,106 +1,49 @@
 
-    template <typename T>
-    class SpinArray{
+class SpinArray{
 
-        public:
-            //Constructor
-            SpinArray(const int arraySize) {
-                length = arraySize;
+    public:
+        //Constructor
+        SpinArray(const int arraySize);
+        ~SpinArray();
 
-                top = new T*[arraySize];
-                head = 0;
-                tail = 0;
+        //Depth point. Contains the z value, pixel locations i and j, and the time
+        struct DPoint {
+            short depth;
+            short i;
+            short j;
+            long time;
+        };
 
-                overwrite = false;
-                overflow = false;
-                lossCounter = 0;
-            };
+        //flag gets
+        bool isOverwriting();
+        bool isOverflowing();
+        long getLossCount();
 
-            //Destructor
-            ~SpinArray() {
-                for (int i=0; i<length; i++)
-                    if (top[i] != nullptr)
-                        delete top[i];
+        //flag sets
+        void setOverwrite(bool over);
+        void resetCount();
 
-                delete[] top;
-            };
+        bool put(DPoint* item);
+        DPoint* get();
+        void clean();
+        void print();
+        void printSize();
 
-            //flag gets
-            bool isOverwriting() { return overwrite; };
-            bool isOverflowing() { return overflow; };
-            long getLossCount() { return lossCounter; };
+    private:
+        //flags
+        bool overwrite;
+        bool overflow;
+        long lossCounter;
 
-            //flag sets
-            void setOverwrite(bool over) { overwrite = over; };
-            void resetCount() { lossCounter = 0; };
-
-            bool put(T* item) {
-                if (overflow && !overwrite) {
-                    lossCounter++;
-                    delete item;
-                    return false;
-                }
-
-                top[head++] = item;
-
-                if (head == length)
-                    head = 0;
-
-                if (head == tail || top[head] != nullptr)
-                    overflow = true;
-            };
-
-            T* get() {
-                T* item = top[tail];
-                top[tail++] = nullptr;
-
-                if (item  != nullptr) {
-                    if (tail >= length)
-                        tail = 0;
-                }
-
-                return item;
-            };
-
-            void cear() {
-                for (int i=0; i<length; i++)
-                    if (top[i] != nullptr)
-                        delete top[i];
-
-                head = 0;
-                top = 0;
-                lossCounter = 0;
-            };
-
-            void print() {
-                for (int i=0; i<length; i++) {
-                    if (i == head)
-                        std::cout << " [H] ";
-                    if (i == tail)
-                        std::cout << " [T] ";
-                    if (top[i] != nullptr)
-                        std::cout << " [X] ";
-                    else
-                        std::cout << " [ ] ";
-                }
-                std::cout << std::endl;
-
-            };
-
-        private:
-            //flags
-            bool overwrite;
-            bool overflow;
-            long lossCounter;
-
-            T** top;
-            long head;
-            long tail;
-            long length;
+        DPoint** top;
+        long head;
+        long tail;
+        long length;
 
 
 
 
 
-    };
+};
+
 

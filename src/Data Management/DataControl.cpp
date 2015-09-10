@@ -1,16 +1,30 @@
 #include "DataControl.h"
 #include <iostream>
 
-
+SpinArray DataControl::buff(DataControl::width*DataControl::height*600);
 bool DataControl::ready = false;
-//vector<string> DataControl::outputData = {""};
+long DataControl::frames = 0;
 
 void DataControl::localCallback(freenect_device *ldev, void *data, uint32_t time) {
-    //std::cout << "Getting stuff\n";
+    //std::cout << "Getting stuff\r";
     //DataControl::ready = false;
+    DataControl::frames++;
+    
+    short* dataC = (short*)data;
 
+    for (int i=0; i<480; i++) {
+        for (int j=0; j<640; j++) {
+            SpinArray::DPoint* point = new SpinArray::DPoint;
+            point->depth = dataC[i*j];
+            point->i = i;
+            point->j = j;
+            point->time = static_cast<long>(time);
 
-    //short* dataC = (short*)data;
+            buff.put( point );
+        }
+    }
+
+    
     //string output("");
 
     //printf("%d", dataC);

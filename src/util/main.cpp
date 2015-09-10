@@ -1,8 +1,14 @@
-//#include <DataControl.h>
+
+
+#include <DataControl.h>
 #include <iostream>
 #include <signal.h>
 #include <fstream>
-#include <SpinArray.h>
+
+#include <thread>         // std::this_thread::sleep_for
+#include <chrono>         // std::chrono::seconds
+
+//class DataControl;
 
 void signalHandler(int signal)
 {
@@ -16,21 +22,37 @@ void signalHandler(int signal)
 
 int main(int argc, char** argv) {
 
-    SpinArray<int> a(5);
-    /*
+
+
     DataControl* to = new DataControl();
-// Handle signals gracefully.
+
+    // Handle signals gracefully.
 	signal(SIGINT, signalHandler);
 	signal(SIGTERM, signalHandler);
 	signal(SIGQUIT, signalHandler);
 
 
     std::cout << "Running\n";
-    while (DataControl::ready && to->errorCheck()) {    }
+    int counter = 0;
+    int sleep_time = 30;
+    while (DataControl::ready && to->errorCheck()) {
+        //std::cout << std::endl;
+        counter += sleep_time;
+        std::this_thread::sleep_for (std::chrono::milliseconds(sleep_time));
+        DataControl::buff.printSize();
+
+        if (counter >= 1000) {
+            counter = 0;
+            std::cout << std::endl << DataControl::frames << std::endl;
+            DataControl::frames = 0;
+        }
+
+        //std::cout << std::endl;
+       }
 
     std::cout << "All done\n";
 
-
+    /*
     //File ouput of data colected by the camera
     //Should be rmemoved later
     ///////////////////////////////////////////
@@ -48,9 +70,13 @@ int main(int argc, char** argv) {
     outf.close();
     ////////////////////////////////////////////
 
-    delete to;
     */
-    //exit(0);
+    delete to;
+
+    exit(0);
+
+
 }
+
 
 
