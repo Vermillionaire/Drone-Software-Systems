@@ -2,6 +2,7 @@
 #include "SpinArray.h"
 #include <vector>
 #include <string>
+#include <thread>      
 
 
 
@@ -19,6 +20,7 @@ class DataControl
 
         const static short width = 640;
         const static short height = 480;
+        const static short brightness = 50;
 
         struct frame {
             short pixel[width][height];
@@ -30,8 +32,10 @@ class DataControl
         static vector<string> outputData;
 
         static long frames;
-    private:
 
         freenect_context* ctx;
         freenect_device* dev;
+    private:
+
+       
 };

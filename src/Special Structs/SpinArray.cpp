@@ -42,6 +42,7 @@ void SpinArray::resetCount() {
 };
 
 bool SpinArray::put(DPoint* item) {
+    std::lock_guard<std::mutex> lock(mutex);
 
     if (overflow && !overwrite) {
         lossCounter++;
@@ -62,6 +63,8 @@ bool SpinArray::put(DPoint* item) {
 
 
 SpinArray::DPoint * SpinArray::get() {
+    std::lock_guard<std::mutex> lock(mutex);
+
     DPoint* item = top[tail];
 
     if (item  != nullptr) {
@@ -79,6 +82,8 @@ SpinArray::DPoint * SpinArray::get() {
 
 
 void SpinArray::clean() {
+    std::lock_guard<std::mutex> lock(mutex);
+    
     for (int i=0; i<length; i++)
         if (top[i] != nullptr)
             delete top[i];
@@ -129,6 +134,6 @@ void SpinArray::printSize() {
 
     }
 
-    std::cout << "] [" << length << "] [" << head << "] [" << tail << "]\r";
+    std::cout << "] [" << length/1000 << "k] [" << head/1000 << "k] [" << tail/1000 << "k]";
 }
 

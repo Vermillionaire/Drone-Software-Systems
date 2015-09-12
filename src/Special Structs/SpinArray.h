@@ -1,3 +1,8 @@
+#ifndef SPINARRAY_H
+#define SPINARRAY_H
+
+#include <thread>
+#include <mutex>
 
 class SpinArray{
 
@@ -6,12 +11,13 @@ class SpinArray{
         SpinArray(const int arraySize);
         ~SpinArray();
 
+        std::mutex mutex;
+
         //Depth point. Contains the z value, pixel locations i and j, and the time
         struct DPoint {
             short depth;
             short i;
             short j;
-            long time;
         };
 
         //flag gets
@@ -46,4 +52,4 @@ class SpinArray{
 
 };
 
-
+#endif
