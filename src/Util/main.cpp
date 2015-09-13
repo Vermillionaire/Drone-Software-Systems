@@ -9,8 +9,6 @@
 #include <thread>         
 #include <chrono>        
 
-//class DataControl;
-
 void signalHandler(int signal)
 {
 	if (signal == SIGINT
@@ -44,14 +42,15 @@ int main(int argc, char** argv) {
 
     std::cout << "Running\n";
     //int counter = 0;
-    int sleep_time = 10;
+    //int sleep_time = 10;
     
-    /*
-    double * x = new double;
-    double * y = new double;
-    double * z = new double;
+    
+    //double * x = new double;
+    //double * y = new double;
+    //double * z = new double;
     freenect_raw_tilt_state *state;
 
+/*
     int size = 75;
     double ax[size];
     double ay[size];
@@ -59,8 +58,8 @@ int main(int argc, char** argv) {
     
 
     int pos = 0;
-    */
-
+    
+*/
     while (DataControl::ready && co->errorCheck()) {
         //std::cout << std::endl;
         

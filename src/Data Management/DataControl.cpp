@@ -7,14 +7,10 @@ bool DataControl::ready = false;
 long DataControl::frames = 0;
 
 void DataControl::localCallback(freenect_device *ldev, void *data, uint32_t time) {
-    //std::cout << "Getting stuff\r";
-    //DataControl::ready = false;
     DataControl::frames++;
-    //std::cout << frames << std::endl;
     
     short* dataC = (short*)data;
 
-    
     for (int i=0; i<480; i++) {
         for (int j=0; j<640; j++) {
             if (dataC[i*j] != 0) {

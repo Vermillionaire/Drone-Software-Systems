@@ -5,7 +5,7 @@ CFLAGS=-std=c++11 -Wall -O2
 OBJS=obj/*.o
 LIBS=-lusb -lfreenect 
 LDIR=-Llibs/libfreenect/build/lib 
-IDIR=-Isrc/Data\ Management/ -Ilibs/libfreenect/include/ -Isrc/Special\ Structs/ -Isrc/Util
+#IDIR=-Isrc/Data\ Management/ -Ilibs/libfreenect/include/ -Isrc/Special\ Structs/ -Isrc/Util
 
 NAME=drone_camera
 
@@ -18,23 +18,24 @@ main_only: main
 	@$(CC) $(CFLAGS) $(OBJS) -o $(NAME) $(LDIR) $(LIBS)
 
 datamanagment:
-	@echo "Compiling Data Management Folder:\n"; \
+	@echo "Compiling data management folder:"; \
 	cd src/Data\ Management; \
 	make defalt; \
 	mv *.o ../../obj; \
-	cd ../..; \
-	echo "\n\n"
+	cd ../.. \
 
 structs: 
-	@echo "Compiling Special Structs Folder:\n"; \
+	@echo "Compiling special structs folder:"; \
 	cd src/Special\ Structs; \
 	pwd; \
 	make defalt; \
 	mv *.o ../../obj; \
-	cd ../..; \
-	echo "\n\n"
+	cd ../.. 
 
 main: 
-	@echo "Compiling The Main Class:\n";
-	@$(CC) $(CFLAGS) $(IDIR) src/Util/main.cpp -c $(LIBS)
-	@mv *.o obj/ 
+	@echo "Compiling the util classes:"; \
+	cd src/Util; \
+	pwd; \
+	make defalt; \
+	mv *.o ../../obj; \
+	cd ../.. 

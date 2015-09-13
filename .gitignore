@@ -1,0 +1,7 @@
+drone_camera
+clean
+obj
+libs
+*.old
+log
+.Low-Level-Data-Management

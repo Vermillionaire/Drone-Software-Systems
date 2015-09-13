@@ -42,8 +42,10 @@ void DataProcessing::compute(int id) {
 			continue;
 
 		z = point->depth;
-		x = (int)((float)((point->i - w2) * (z + minDistance)) * scaleFactor);
-		y = (int)((float)((point->j - h2) * (z + minDistance)) * scaleFactor);
+		if (z != 0) {
+			x = (int)((float)((point->i - w2) * (z + minDistance)) * scaleFactor);
+			y = (int)((float)((point->j - h2) * (z + minDistance)) * scaleFactor);
+		}
 
 		delete point;
 		
@@ -69,18 +71,17 @@ void DataProcessing::inspect(int id) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
 		
-
 		SpinArray::DPoint * point = DataControl::buff.get();
 
 		if (point == nullptr) {
-			//Log::outln(id, "Null pointer.");
 			continue;
 		}
 
-
 		z = point->depth;
-		x = (int)((float)((point->i - w2) * (z + minDistance)) * scaleFactor);
-		y = (int)((float)((point->j - h2) * (z + minDistance)) * scaleFactor);
+		if (z != 0) {
+			x = (int)((float)((point->i - w2) * (z + minDistance)) * scaleFactor);
+			y = (int)((float)((point->j - h2) * (z + minDistance)) * scaleFactor);
+		}
 
 		std::cout << "-----------\n";
 		std::cout << point->i << " " << point->j << " " << point->depth << std::endl;
