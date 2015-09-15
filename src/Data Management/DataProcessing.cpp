@@ -36,11 +36,11 @@ void DataProcessing::compute(int id) {
 	Log::outln(id, "Thread # starting.");
 
 	int size = 300;
-	while (DataControl::ready) {
+	do {
 	//	std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
 		//SpinArray::DPoint * point = DataControl::buff.get();
-		SpinArray::DPoint * point = new SpinArray::DPoint[size];
+		Point * point = new Point[size];
 		DataControl::buff.get(point, size);
 
 
@@ -48,22 +48,19 @@ void DataProcessing::compute(int id) {
 			//continue;
 
 		//Point* p = new Point();
-
-		/*
-		p->z = point->depth;
-		p->x = (int)((float)((point->i - w2) * (p->z + minDistance)) * scaleFactor)/10;
-		p->y = (int)((float)((point->j - h2) * (p->z + minDistance)) * scaleFactor)/10;
-		p->z = p->z / 10.0;
-		*/
-
-
+		for (int i=0; i<size; i++) {
+			p[i].x = (int)((float)((p[i].i - w2) * (p[i].z + minDistance)) * scaleFactor)/10;
+			p[i].y = (int)((float)((p[i].j - h2) * (p[i].z + minDistance)) * scaleFactor)/10;
+			p[i].z = p[i].z / 10.0;
+		}
 
 		//std::make_pair<Point,Point>(p,p);
 		//mymap.insert(std::make_pair(*p,*p));
 		delete[] point;
 
 
-	}
+	} while (DataControl::ready);
+
 	Log::outln(id, "Thread # finished.");
 
 };
@@ -75,36 +72,6 @@ void DataProcessing::consume(int id) {
 		DataControl::buff.get();
 	}
 };
-
-void DataProcessing::inspect(int id) {
-	//std::this_thread::sleep_for(std::chrono::milliseconds(500));
-	int x=0,y=0,z=0;
-	Log::outln(id, "Thread # starting.");
-
-	while (DataControl::ready) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
-
-		SpinArray::DPoint * point = DataControl::buff.get();
-
-		if (point == nullptr) {
-			continue;
-		}
-
-		z = point->depth;
-		if (z != 0) {
-			x = (int)((float)((point->i - w2) * (z + minDistance)) * scaleFactor);
-			y = (int)((float)((point->j - h2) * (z + minDistance)) * scaleFactor);
-		}
-
-		std::cout << "-----------\n";
-		std::cout << point->i << " " << point->j << " " << point->depth << std::endl;
-		delete point;
-		std::cout << x << " " << y << " " << z << std::endl;
-	}
-
-	Log::outln(id, "Thread # finished.");
-}
 
 void DataProcessing::fpsCounter() {
 
@@ -121,8 +88,8 @@ void DataProcessing::fpsCounter() {
 void DataProcessing::joinAll() {
 	Log::outln("Waiting for threads...");
 	thread1->join();
-	thread2->join();
-	thread3->join();
+	//thread2->join();
+	//thread3->join();
 	fpsc->join();
 	Log::outln("All threads finished.");
 };

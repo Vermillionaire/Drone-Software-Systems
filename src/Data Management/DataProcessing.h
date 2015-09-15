@@ -10,9 +10,7 @@ class DataProcessing {
 		~DataProcessing();
 
 		void joinAll();
-
-
-    std::unordered_map<Point,Point,PointHasher> mymap;
+    //std::unordered_map<Point,Point,PointHasher> mymap;
 
 	private:
 		std::thread *thread1;
@@ -22,7 +20,6 @@ class DataProcessing {
 
 		void compute(int id);
 		void consume(int id);
-		void inspect(int id);
 		void fpsCounter();
 
 };

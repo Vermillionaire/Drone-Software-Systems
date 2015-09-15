@@ -10,15 +10,14 @@ long DataControl::frameLimiter = 0;
 
 void DataControl::localCallback(freenect_device *ldev, void *data, uint32_t time) {
   DataControl::frames++;
-  //DataControl::ready = false;
-
-  //int points = 0;
-  //int attempts = 0;
-  //int actual = 0;
+  DataControl::ready = false;
 
 
   //This area could by moved to spin array to reduce calls tp the put function. It blocks anyways right?
   short * fm = (short*) data;
+  buff.put(fm, DataControl::width, DataControl::height);
+
+  /*
   buff.lock();
   //std::cout << "Starting loop\n";
 
@@ -31,6 +30,7 @@ void DataControl::localCallback(freenect_device *ldev, void *data, uint32_t time
     }
   }
   buff.unlock();
+  */
   std::this_thread::sleep_for(std::chrono::milliseconds(frameLimiter));
 
 };

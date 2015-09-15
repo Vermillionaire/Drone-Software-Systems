@@ -30,7 +30,7 @@ class WebPage: public WebSocket::Handler {
 
       shared_ptr<WebPage> handler(this);
       server->addWebSocketHandler("/ws", handler);
-      server->serve("src/Web", 9090);
+      server->serve("src/Web", 9001);
 
     };
 

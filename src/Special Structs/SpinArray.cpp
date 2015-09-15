@@ -4,7 +4,7 @@
 SpinArray::SpinArray(const int arraySize) {
     length = arraySize;
 
-    top = new DPoint[arraySize];
+    top = new Point[arraySize];
     head = 0;
     tail = 0;
     distance = 0;
@@ -59,9 +59,9 @@ bool SpinArray::put(short depth, short i, short j) {
       return false;
   }
 
-  top[head].depth = depth;
-  top[head].i = i;
-  top[head].j = j;
+  top[head].z = depth;
+  top[head].x = i;
+  top[head].y = j;
   head++;
   distance++;
 
@@ -76,22 +76,53 @@ bool SpinArray::put(short depth, short i, short j) {
 
 };
 
-SpinArray::DPoint * SpinArray::get() {
-
-
-
+void SpinArray::put(short* frame, int width, int height) {
   std::lock_guard<std::mutex> lock(mutex);
 
+  if (length/2 < distance && DataControl::frameLimiter != 500)
+    DataControl::frameLimiter++;
+  else
+    if (DataControl::frameLimiter != 0)
+      DataControl::frameLimiter--;
+
+  for (int i=0; i<height; i++) {
+    for (int j=0; j<width; j++) {
+      int pos = width*i+j;
+
+      if (overflow && !overwrite) {
+          lossCounter++;
+          if (distance < length)
+            overflow = false;
+          continue;
+      }
+
+      top[head].z = frame[pos];
+      top[head].x = j;
+      top[head].y = i;
+      head++;
+      distance++;
+
+      if (head >= length)
+          head = 0;
+
+      //if (head == tail || top[head] != nullptr)
+      if (distance == length)
+          overflow = true;
+    }
+  }
+}
+
+//Obsolete
+Point * SpinArray::get() {
+  std::lock_guard<std::mutex> lock(mutex);
 
   if (distance == 0)
     return nullptr;
 
-  DPoint* item = &top[tail];
+  Point* item = &top[tail];
 
   //if (item  != nullptr) {
       //top[tail] = nullptr;
-
-
 
   if (tail+1 >= length)
       tail = 0;
@@ -103,12 +134,9 @@ SpinArray::DPoint * SpinArray::get() {
   return item;
 };
 
-void SpinArray::get(SpinArray::DPoint *array, int size) {
 
-
-
+void SpinArray::get(Point *array, int size) {
   std::lock_guard<std::mutex> lock(mutex);
-
 
   for (int i=0; i<size; i++) {
 
@@ -129,21 +157,6 @@ void SpinArray::get(SpinArray::DPoint *array, int size) {
     distance--;
   }
 
-};
-
-//No longer necessary
-void SpinArray::clean() {
-  /*
-    std::lock_guard<std::mutex> lock(mutex);
-
-    for (int i=0; i<length; i++)
-        if (top[i] != nullptr)
-            delete top[i];
-
-    head = 0;
-    top = 0;
-    lossCounter = 0;
-    */
 };
 
 void SpinArray::print() {

@@ -2,6 +2,7 @@
 #define SPINARRAY_H
 
 #include "DataControl.h"
+#include "Point.h"
 #include <thread>
 #include <mutex>
 #include <atomic>
@@ -16,11 +17,12 @@ class SpinArray{
         std::mutex mutex;
 
         //Depth point. Contains the z value, pixel locations i and j, and the time
+        /*
         struct DPoint {
             short depth;
             short i;
             short j;
-        };
+        };*/
 
         //flag gets
         bool isOverwriting();
@@ -34,9 +36,9 @@ class SpinArray{
         void resetCount();
 
         bool put(short depth, short i, short j);
-        void get(SpinArray::DPoint *array, int size);
-        DPoint* get();
-        void clean();
+        void put(short* frame, int width, int height);
+        void get(Point *array, int size);
+        Point* get();
         void print();
         void printSize();
         void lock();
@@ -48,7 +50,7 @@ class SpinArray{
         bool overflow;
         long lossCounter;
 
-        DPoint* top;
+        Point* top;
         long head;
         long tail;
         long length;
