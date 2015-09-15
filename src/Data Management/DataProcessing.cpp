@@ -3,6 +3,7 @@
 #include "SpinArray.h"
 #include "Log.h"
 #include <chrono>
+#include <utility>
 
 const int minDistance = -10;
 const float scaleFactor = .0021;
@@ -13,11 +14,11 @@ const int h2 = 240;
 
 DataProcessing::DataProcessing() {
 	Log::outln("Starting data processing.");
-	//thread1 = new std::thread(&DataProcessing::compute, this, 1);
-	//thread2 = new std::thread(&DataProcessing::inspect, this, 2);
+	thread1 = new std::thread(&DataProcessing::compute, this, 1);
+	//thread2 = new std::thread(&DataProcessing::compute, this, 2);
 	//thread3 = new std::thread(&DataProcessing::compute, this, 3);
 	fpsc = new std::thread(&DataProcessing::fpsCounter, this);
-	
+
 };
 
 DataProcessing::~DataProcessing() {
@@ -31,34 +32,47 @@ DataProcessing::~DataProcessing() {
 
 
 void DataProcessing::compute(int id) {
-	int x,y,z;
+	//std::this_thread::yield();
 	Log::outln(id, "Thread # starting.");
+
+	int size = 300;
 	while (DataControl::ready) {
-		//std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	//	std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
-		SpinArray::DPoint * point = DataControl::buff.get();
-	
-		if (point == nullptr) 
-			continue;
+		//SpinArray::DPoint * point = DataControl::buff.get();
+		SpinArray::DPoint * point = new SpinArray::DPoint[size];
+		DataControl::buff.get(point, size);
 
-		z = point->depth;
-		if (z != 0) {
-			x = (int)((float)((point->i - w2) * (z + minDistance)) * scaleFactor);
-			y = (int)((float)((point->j - h2) * (z + minDistance)) * scaleFactor);
-		}
 
-		delete point;
-		
+		//if (point == nullptr)
+			//continue;
+
+		//Point* p = new Point();
+
+		/*
+		p->z = point->depth;
+		p->x = (int)((float)((point->i - w2) * (p->z + minDistance)) * scaleFactor)/10;
+		p->y = (int)((float)((point->j - h2) * (p->z + minDistance)) * scaleFactor)/10;
+		p->z = p->z / 10.0;
+		*/
+
+
+
+		//std::make_pair<Point,Point>(p,p);
+		//mymap.insert(std::make_pair(*p,*p));
+		delete[] point;
+
+
 	}
 	Log::outln(id, "Thread # finished.");
-	
+
 };
 
 void DataProcessing::consume(int id) {
 	while ( DataControl::ready) {
-		std::chrono::milliseconds(10);
+		//std::chrono::milliseconds(10);
 		//std::cout << "Consumer " << id << "consuming.\n";
-		delete DataControl::buff.get();
+		DataControl::buff.get();
 	}
 };
 
@@ -70,7 +84,7 @@ void DataProcessing::inspect(int id) {
 	while (DataControl::ready) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-		
+
 		SpinArray::DPoint * point = DataControl::buff.get();
 
 		if (point == nullptr) {
@@ -106,9 +120,9 @@ void DataProcessing::fpsCounter() {
 
 void DataProcessing::joinAll() {
 	Log::outln("Waiting for threads...");
-	//thread1->join();
-	//thread2->join();
-	//thread3->join();
+	thread1->join();
+	thread2->join();
+	thread3->join();
 	fpsc->join();
 	Log::outln("All threads finished.");
 };

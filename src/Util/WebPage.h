@@ -1,79 +1,54 @@
+#ifndef WEBPAGE_H
+#define WEBPAGE_H
+
 #include "seasocks/PrintfLogger.h"
 #include "seasocks/Server.h"
 #include "seasocks/WebSocket.h"
-
-#include <cstring>
-#include <iostream>
-#include <memory>
-#include <set>
-#include <sstream>
-#include <string>
+#include "Log.h"
 
 using namespace seasocks;
-using namespace std;
 
-class MyHandler: public WebSocket::Handler {
-public:
-    MyHandler(Server* server) : _server(server), _currentValue(0) {
-        setValue(1);
-    }
+class WebPage: public WebSocket::Handler {
+  public:
+    WebPage() {    };
 
-    virtual void onConnect(WebSocket* connection) {
-        _connections.insert(connection);
-        connection->send(_currentSetValue.c_str());
-        cout << "Connected: " << connection->getRequestUri()
-                << " : " << formatAddress(connection->getRemoteAddress())
-                << endl;
-        cout << "Credentials: " << *(connection->credentials()) << endl;
-    }
+    std::thread *page_thread;
+    Server* server;
 
-    virtual void onData(WebSocket* connection, const char* data) {
-        if (0 == strcmp("die", data)) {
-            _server->terminate();
-            return;
-        }
-        if (0 == strcmp("close", data)) {
-            cout << "Closing.." << endl;
-            connection->close();
-            cout << "Closed." << endl;
-            return;
-        }
+    virtual void onConnect(WebSocket* connection) {    };
 
-        int value = atoi(data) + 1;
-        if (value > _currentValue) {
-            setValue(value);
-            for (auto connection : _connections) {
-                connection->send(_currentSetValue.c_str());
-            }
-        }
-    }
+    virtual void onData(WebSocket* connection, const char* data) {    };
 
-    virtual void onDisconnect(WebSocket* connection) {
-        _connections.erase(connection);
-        cout << "Disconnected: " << connection->getRequestUri()
-                << " : " << formatAddress(connection->getRemoteAddress())
-                << endl;
-    }
+    virtual void onDisconnect(WebSocket* connection) {    };
 
-private:
-    set<WebSocket*> _connections;
-    Server* _server;
-    int _currentValue;
-    string _currentSetValue;
+    void serverInit() {
+      Log::outln("Starting WebSocket Server.");
+      shared_ptr<Logger> logger(new PrintfLogger(Logger::ERROR));
 
-    void setValue(int value) {
-        _currentValue = value;
-        _currentSetValue = makeExecString("set", _currentValue);
-    }
+      server = new Server(logger);
+      server->setLameConnectionTimeoutSeconds(60);
+
+      shared_ptr<WebPage> handler(this);
+      server->addWebSocketHandler("/ws", handler);
+      server->serve("src/Web", 9090);
+
+    };
+
+    void startServer() {
+  		page_thread = new std::thread(&WebPage::serverInit, this);
+    };
+
+    void stopServer() {
+      if (server != nullptr)
+        server->terminate();
+
+      if (page_thread != nullptr)
+        page_thread->join();
+    };
+
+  private:
+
+
 };
 
-int main(int argc, const char* argv[]) {
-    shared_ptr<Logger> logger(new PrintfLogger(Logger::DEBUG));
-
-    Server server(logger);
-
-    shared_ptr<MyHandler> handler(new MyHandler(&server));
-    server.addWebSocketHandler("/ws", handler);
-    server.serve("src/ws_test_web", 9090);
-    return 0;
-}
+#endif

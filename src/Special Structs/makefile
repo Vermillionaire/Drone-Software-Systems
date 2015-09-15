@@ -2,10 +2,10 @@ include ../../include.mk
 
 CC=g++
 CFLAGS=-std=c++11 -Wall -O2
-IDIR=-I.
+IDIR=-I. -I$(SRC)/Data\ Management/
 
 defalt: spinarray.o
-	
+
 all: spinarray.o
 
 spinarray.o:

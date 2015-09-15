@@ -4,9 +4,10 @@
 SpinArray::SpinArray(const int arraySize) {
     length = arraySize;
 
-    top = new DPoint*[arraySize];
+    top = new DPoint[arraySize];
     head = 0;
     tail = 0;
+    distance = 0;
 
     overwrite = false;
     overflow = false;
@@ -14,9 +15,9 @@ SpinArray::SpinArray(const int arraySize) {
 };
 
 SpinArray::~SpinArray() {
-    for (int i=0; i<length; i++)
-        if (top[i] != nullptr)
-            delete top[i];
+    //for (int i=0; i<length; i++)
+      //  if (top[i] != nullptr)
+          //  delete top[i];
 
     delete[] top;
 };
@@ -41,49 +42,100 @@ void SpinArray::resetCount() {
     lossCounter = 0;
 };
 
-bool SpinArray::put(DPoint* item) {
-    std::lock_guard<std::mutex> lock(mutex);
 
-    if (overflow && !overwrite) {
-        lossCounter++;
-        delete item;
-        return false;
-    }
+bool SpinArray::put(short depth, short i, short j) {
+  //std::lock_guard<std::mutex> lock(mutex);
 
-    top[head++] = item;
+  if (length/2 < distance && DataControl::frameLimiter != 500)
+    DataControl::frameLimiter++;
+  else
+    if (DataControl::frameLimiter != 0)
+      DataControl::frameLimiter--;
 
-    if (head == length)
-        head = 0;
+  if (overflow && !overwrite) {
+      lossCounter++;
+      if (distance < length)
+        overflow = false;
+      return false;
+  }
 
-    if (head == tail || top[head] != nullptr)
-        overflow = true;
+  top[head].depth = depth;
+  top[head].i = i;
+  top[head].j = j;
+  head++;
+  distance++;
 
-    return true;
+  if (head >= length)
+      head = 0;
+
+  //if (head == tail || top[head] != nullptr)
+  if (distance == length)
+      overflow = true;
+
+  return true;
+
 };
-
 
 SpinArray::DPoint * SpinArray::get() {
-    std::lock_guard<std::mutex> lock(mutex);
 
-    DPoint* item = top[tail];
 
-    if (item  != nullptr) {
-        top[tail] = nullptr;
 
-        if (tail == head);
-        else if (tail+1 >= length)
-            tail = 0;
-        else
-            tail++;
-    }
+  std::lock_guard<std::mutex> lock(mutex);
 
-    return item;
+
+  if (distance == 0)
+    return nullptr;
+
+  DPoint* item = &top[tail];
+
+  //if (item  != nullptr) {
+      //top[tail] = nullptr;
+
+
+
+  if (tail+1 >= length)
+      tail = 0;
+  else
+      tail++;
+
+  distance--;
+
+  return item;
 };
 
+void SpinArray::get(SpinArray::DPoint *array, int size) {
 
+
+
+  std::lock_guard<std::mutex> lock(mutex);
+
+
+  for (int i=0; i<size; i++) {
+
+    //Creates empty gaps, fix pls
+    if (distance == 0)
+      continue;
+
+    array[i] = top[tail];
+
+    //if (item  != nullptr) {
+      //top[tail] = nullptr;
+
+    if (tail+1 >= length)
+      tail = 0;
+    else
+      tail++;
+
+    distance--;
+  }
+
+};
+
+//No longer necessary
 void SpinArray::clean() {
+  /*
     std::lock_guard<std::mutex> lock(mutex);
-    
+
     for (int i=0; i<length; i++)
         if (top[i] != nullptr)
             delete top[i];
@@ -91,6 +143,7 @@ void SpinArray::clean() {
     head = 0;
     top = 0;
     lossCounter = 0;
+    */
 };
 
 void SpinArray::print() {
@@ -102,10 +155,10 @@ void SpinArray::print() {
             std::cout << "H";
         if (i == tail)
             std::cout << "T";
-        if (top[i] != nullptr)
-            std::cout << "X";
+        else
+            std::cout << ".";
 
-        std::cout << "] ";
+        std::cout << "]";
     }
     std::cout << std::endl;
 
@@ -119,21 +172,38 @@ void SpinArray::printSize() {
 
     for (int i=0; i<size; i++) {
         int pos = i*scale;
-        if (head > pos && tail < pos)
-                std::cout << "X";
-        if (head < pos && tail > pos)
-                std::cout << "-";
-        else if (pos > head && pos > tail)
-                std::cout << "-";
-        else if (pos < head && pos < tail) {
-            if (head < tail)
-                std::cout << "X";
+        if (head < tail) {
+          if (pos < head)
+            std::cout << "X";
+          else if (pos >= tail)
+            std::cout << "X";
+          else
+            std::cout << "-";
+        }
+        else if (head > tail) {
+          if (pos < tail)
+            std::cout << "-";
+          else if (pos >= head)
+            std::cout << "-";
+          else
+            std::cout << "X";
+        }
+        else {
+            if (distance == 0)
+              std::cout << "-";
             else
-                std::cout << "-";
+              std::cout << "X";
         }
 
     }
 
-    std::cout << "] [" << length/1000 << "k] [" << head/1000 << "k] [" << tail/1000 << "k]";
+    std::cout << "] l[" << length << "] h[" << head << "] t[" << tail << "] d[" << distance << "] L[" << lossCounter << "]" ;
 }
 
+void SpinArray::lock() {
+  mutex.lock();
+}
+
+void SpinArray::unlock() {
+  mutex.unlock();
+}

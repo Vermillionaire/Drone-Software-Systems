@@ -1,31 +1,39 @@
 #include "DataControl.h"
 #include "Log.h"
 #include <iostream>
+#include <thread>
 
-SpinArray DataControl::buff(DataControl::width*DataControl::height*600);
+SpinArray DataControl::buff(DataControl::width*DataControl::height*180);
 bool DataControl::ready = false;
 long DataControl::frames = 0;
+long DataControl::frameLimiter = 0;
 
 void DataControl::localCallback(freenect_device *ldev, void *data, uint32_t time) {
-    DataControl::frames++;
-    
-    short* dataC = (short*)data;
+  DataControl::frames++;
+  //DataControl::ready = false;
 
-    for (int i=0; i<480; i++) {
-        for (int j=0; j<640; j++) {
-            if (dataC[i*j] != 0) {
-                SpinArray::DPoint* point = new SpinArray::DPoint;
+  //int points = 0;
+  //int attempts = 0;
+  //int actual = 0;
 
-                point->depth = dataC[i*j];
-                point->i = i;
-                point->j = j;
 
-                buff.put( point );
-           }
-        }
+  //This area could by moved to spin array to reduce calls tp the put function. It blocks anyways right?
+  short * fm = (short*) data;
+  buff.lock();
+  //std::cout << "Starting loop\n";
+
+  for (int i=0; i<480; i++) {
+    for (int j=0; j<640; j++) {
+      int pos = DataControl::width*i+j;
+
+
+      buff.put(fm[pos], i, j);
     }
-    
-}
+  }
+  buff.unlock();
+  std::this_thread::sleep_for(std::chrono::milliseconds(frameLimiter));
+
+};
 
 
 bool DataControl::errorCheck() {
@@ -45,17 +53,17 @@ DataControl::DataControl()
 	}
 	Log::outln(ret, "Initialized library.");
 
-    freenect_set_log_level(ctx, FREENECT_LOG_ERROR);
-    
-    //freenect_device_flags test = (freenect_device_flags) FREENECT_DEVICE_CAMERA | FREENECT_DEVICE_MOTOR;
-    freenect_select_subdevices(ctx, (freenect_device_flags) 0x03);
+  freenect_set_log_level(ctx, FREENECT_LOG_ERROR);
 
-    //Check if there are devices to connect to
-    ret = freenect_num_devices(ctx);
-    if (ret < 0) {
-        DataControl::ready = false;
-        return;
-	}
+  //freenect_device_flags test = (freenect_device_flags) FREENECT_DEVICE_CAMERA | FREENECT_DEVICE_MOTOR;
+  freenect_select_subdevices(ctx, (freenect_device_flags) 0x03);
+
+  //Check if there are devices to connect to
+  ret = freenect_num_devices(ctx);
+  if (ret < 0) {
+      DataControl::ready = false;
+      return;
+    }
 	else if (ret == 0) {
         DataControl::ready = false;
         Log::outln("No Devices were detected");
@@ -71,14 +79,13 @@ DataControl::DataControl()
 	}
 	Log::outln(ret, "Device opened.");
 
-    //Set IR brightness to max
-    ret = freenect_set_ir_brightness(dev, 50);
-    Log::outln(ret, "Brightness set to " + std::to_string(DataControl::brightness) );
+  //Set IR brightness to max
+  ret = freenect_set_ir_brightness(dev, 50);
+  Log::outln(ret, "Brightness set to " + std::to_string(DataControl::brightness) );
 
-
-    //Set the callback for retrieving data
-    freenect_set_depth_callback(dev, localCallback);
-    Log::outln("Callback set.");
+  //Set the callback for retrieving data
+  freenect_set_depth_callback(dev, localCallback);
+  Log::outln("Callback set.");
 
     //Set the debth options
 	ret = freenect_set_depth_mode( dev, freenect_find_depth_mode(FREENECT_RESOLUTION_MEDIUM, FREENECT_DEPTH_MM));
@@ -88,21 +95,21 @@ DataControl::DataControl()
 		DataControl::ready = false;
 		return;
 	}
-    Log::outln(ret, "Set depth mode.");
+  Log::outln(ret, "Set depth mode.");
 
-    //Start the data retrival
-    ret = freenect_start_depth(dev);
-    if (ret < 0) {
-       //freenect_close_device(dev);
-		//freenect_shutdown(ctx);
-		DataControl::ready = false;
-		return;
-	}
+  //Start the data retrival
+  ret = freenect_start_depth(dev);
+  if (ret < 0) {
+     //freenect_close_device(dev);
+	//freenect_shutdown(ctx);
+	DataControl::ready = false;
+	return;
+  }
 	Log::outln(ret, "Started debth.");
 
-    //Flag to indicated the device is ready and running
-    DataControl::ready = true;
-    Log::outln("Finished initializing the device");
+  //Flag to indicated the device is ready and running
+  DataControl::ready = true;
+  Log::outln("Finished initializing the device");
 
 
 }
@@ -119,4 +126,3 @@ DataControl::~DataControl()
     if (ctx != nullptr)
         freenect_shutdown(ctx);
 }
-
