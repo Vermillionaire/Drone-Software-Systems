@@ -59,11 +59,13 @@ void DataProcessing::compute(int id) {
 				continue;
 
 			num++;
-			output += "\"point\": [{\n\t\t";
+			output += "{\n";
+			//output += "\"point\": [{\n\t\t";
 			output += " \"x\": \"" + std::to_string( (int)((p[i].x - w2) * (p[i].z + minDistance) * scaleFactor)/10 ) + "\",\n\t\t";
 			output += " \"y\": \"" + std::to_string( (int)((p[i].y - h2) * (p[i].z + minDistance) * scaleFactor)/10 ) + "\",\n\t\t";
-			output += " \"y\": \"" + std::to_string( (int)(p[i].z / 10.0) ) + "\"\n\t";
-			output += "}],\n\t";
+			output += " \"z\": \"" + std::to_string( (int)(p[i].z / 10.0) ) + "\"\n\t";
+			//output += "}],\n\t";
+			output += "},\n";
 			/*
 			p[i].x = (int)((float)((p[i].x - w2) * (p[i].z + minDistance)) * scaleFactor)/10;
 			p[i].y = (int)((float)((p[i].y - h2) * (p[i].z + minDistance)) * scaleFactor)/10;

@@ -12,7 +12,7 @@ function Get(url){
 };
 
 var data = JSON.parse(Get("json/data1.json"));
-console.log(data.size);
+console.log(data.data);
 
 
 
@@ -30,6 +30,12 @@ var createScene = function () {
     dash = 10
     space = dash * 10
     dnum = 0
+
+    for (i = 0; i<data.size; i++) {
+      var box = BABYLON.Mesh.CreateBox("box", 1.0, scene);
+      box.position = new BABYLON.Vector3(data.data[i].point.x, data.data[i].y, data.data[i].z);
+    }
+
     for (i = -num; i <= num; i++){
       for (j = -num; j <= num; j++) {
         BABYLON.Mesh.CreateDashedLines("lines", [

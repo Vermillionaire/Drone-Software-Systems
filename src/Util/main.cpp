@@ -6,7 +6,6 @@
 #include "SpinArray.h"
 #include "Log.h"
 #include "WebPage.h"
-#include <boost/atomic.hpp>
 
 #include <iostream>
 #include <signal.h>
