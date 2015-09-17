@@ -35,7 +35,7 @@ void DataProcessing::compute(int id) {
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	//std::this_thread::yield();
 	Log::outln(id, "Thread # starting.");
-	std::string output("{ \"size\": \"300\",\n \"data\": [\n\t");
+	std::string output("{ \"size\": \"300\",\n \"data\": [{\n\t");
 
 
 	int size = 1000;
@@ -59,11 +59,11 @@ void DataProcessing::compute(int id) {
 				continue;
 
 			num++;
-			output += "\"point" + std::to_string(i) + "\": {\n\t\t";
+			output += "\"point\": [{\n\t\t";
 			output += " \"x\": \"" + std::to_string( (int)((p[i].x - w2) * (p[i].z + minDistance) * scaleFactor)/10 ) + "\",\n\t\t";
 			output += " \"y\": \"" + std::to_string( (int)((p[i].y - h2) * (p[i].z + minDistance) * scaleFactor)/10 ) + "\",\n\t\t";
 			output += " \"y\": \"" + std::to_string( (int)(p[i].z / 10.0) ) + "\"\n\t";
-			output += "},\n\t";
+			output += "}],\n\t";
 			/*
 			p[i].x = (int)((float)((p[i].x - w2) * (p[i].z + minDistance)) * scaleFactor)/10;
 			p[i].y = (int)((float)((p[i].y - h2) * (p[i].z + minDistance)) * scaleFactor)/10;
@@ -74,7 +74,7 @@ void DataProcessing::compute(int id) {
 		if (num <= 0)
 			continue;
 
-		output += "\"end\"\n\t]\n}";
+		output += "\"end\": \"end\"\n\t}]\n}";
 		Log::fileOut("data"+std::to_string(counter++)+".json", output);
 
 		//std::make_pair<Point,Point>(p,p);

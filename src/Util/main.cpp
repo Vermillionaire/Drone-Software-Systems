@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
 		signal(SIGINT, signalHandler);
 		signal(SIGTERM, signalHandler);
 		signal(SIGQUIT, signalHandler);
-		
+
 
     DataControl *co = new DataControl();
 
@@ -42,11 +42,8 @@ int main(int argc, char** argv) {
 
     DataProcessing *cp = new DataProcessing();
 
-
-
 		//WebPage wp;
 		//wp.startServer();
-
 
     std::cout << "Running\n";
 		while (DataControl::ready && co->errorCheck()) {
@@ -61,8 +58,8 @@ int main(int argc, char** argv) {
     delete cp;
     delete co;
 
-		//WebPage wp;
-	//	wp.startServer();
+		WebPage wp;
+	  wp.startServer();
 
 		while (true) {};
 		//seg fault

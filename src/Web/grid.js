@@ -1,20 +1,20 @@
 var canvas = document.getElementById("renderCanvas");
 var engine = new BABYLON.Engine(canvas, true);
 
-console.log("Testst");
-$.getJSON( "json/data1", function( data ) {
-  var items = [];
-  print("Test1");
-  $.each( data, function( key, val ) {
-    print("Test");
-    items.push( "<li id='" + key + "'>" + val + "</li>" );
-  });
+console.log(window.location.href);
 
-  $( "<ul/>", {
-    "class": "my-new-list",
-    html: items.join( "" )
-  }).appendTo( "body" );
-});
+
+function Get(url){
+  var Httpreq = new XMLHttpRequest(); // a new request
+  Httpreq.open("GET",url,false);
+  Httpreq.send(null);
+  return Httpreq.responseText;
+};
+
+var data = JSON.parse(Get("json/data1.json"));
+console.log(data.size);
+
+
 
 var createScene = function () {
     var scene = new BABYLON.Scene(engine);
