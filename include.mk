@@ -1,4 +1,4 @@
-HOME=/home/brian/Projects
+WORK:=$(shell echo $(HOME))/Projects
 PROJECT=Drone-Software-Systems
-SRC=$(HOME)/$(PROJECT)/src
-LIBS=$(HOME)/$(PROJECT)/libs
+SRC=$(WORK)/$(PROJECT)/src
+LIBS=$(WORK)/$(PROJECT)/libs

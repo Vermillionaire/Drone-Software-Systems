@@ -28,6 +28,10 @@ void signalHandler(int signal)
 int main(int argc, char** argv) {
     Log::outln(argc, ": Number of args.");
 
+		signal(SIGINT, signalHandler);
+		signal(SIGTERM, signalHandler);
+		signal(SIGQUIT, signalHandler);
+		
 
     DataControl *co = new DataControl();
 
@@ -38,10 +42,7 @@ int main(int argc, char** argv) {
 
     DataProcessing *cp = new DataProcessing();
 
-    // Handle signals gracefully.
-		signal(SIGINT, signalHandler);
-		signal(SIGTERM, signalHandler);
-		signal(SIGQUIT, signalHandler);
+
 
 		//WebPage wp;
 		//wp.startServer();
@@ -60,6 +61,12 @@ int main(int argc, char** argv) {
     delete cp;
     delete co;
 
+		//WebPage wp;
+	//	wp.startServer();
+
+		while (true) {};
+		//seg fault
+		//wp.stopServer();
 
     return 0;
 }

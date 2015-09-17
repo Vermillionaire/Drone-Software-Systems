@@ -4,7 +4,7 @@ CC=g++
 CFLAGS=-std=c++11 -Wall -O2
 IDIR=-I. -I$(LIBS) -I$(SRC)/Data\ Management -I$(SRC)/Special\ Structs -I$(LIBS)/libfreenect/include -I$(LIBS)/seasocks/src/main/c/
 
-defalt: main.o networking.o
+defalt: main.o
 
 all: spinarray.o
 

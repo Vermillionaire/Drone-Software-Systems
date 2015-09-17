@@ -1,6 +1,21 @@
 var canvas = document.getElementById("renderCanvas");
 var engine = new BABYLON.Engine(canvas, true);
 
+console.log("Testst");
+$.getJSON( "json/data1", function( data ) {
+  var items = [];
+  print("Test1");
+  $.each( data, function( key, val ) {
+    print("Test");
+    items.push( "<li id='" + key + "'>" + val + "</li>" );
+  });
+
+  $( "<ul/>", {
+    "class": "my-new-list",
+    html: items.join( "" )
+  }).appendTo( "body" );
+});
+
 var createScene = function () {
     var scene = new BABYLON.Scene(engine);
 

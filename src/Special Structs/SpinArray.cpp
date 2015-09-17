@@ -159,6 +159,10 @@ void SpinArray::get(Point *array, int size) {
 
 };
 
+long SpinArray::getDistance() {
+  return distance;
+}
+
 void SpinArray::print() {
     std::cout << "Head = " << head << "  Tail = " << tail << "  Loss = " << lossCounter << std::endl;
     std::cout << "FLAGS: overwrite[" << overwrite << "]  overflow[" << overflow << "]" << std::endl;
