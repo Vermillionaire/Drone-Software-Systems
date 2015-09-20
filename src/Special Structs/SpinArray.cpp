@@ -85,9 +85,13 @@ void SpinArray::put(int* frame, int width, int height) {
     if (DataControl::frameLimiter != 0)
       DataControl::frameLimiter--;
 
+  int row = 0;
+  int add = head;
+  int dis = distance;
+
   for (int i=0; i<height; i++) {
-    for (int j=0; j<width; j+=2) {
-      int pos = width*i+j;
+    row = i * width;
+    for (int j=0; j<width; j++) {
 
       if (overflow && !overwrite) {
           lossCounter++;
@@ -96,39 +100,23 @@ void SpinArray::put(int* frame, int width, int height) {
           continue;
       }
 
-      top[head].z = (frame[pos] & 0xFFFF0000)>>16;
-      top[head].x = j;
-      top[head].y = i;
-      head++;
-      distance++;
+      top[add].z = frame[row+j];
+      top[add].x = j;
+      top[add].y = i;
+      add++;
+      dis++;
 
-      if (head >= length)
-          head = 0;
-
-      if (distance == length) {
-          overflow = true;
-          if (!overwrite)
-            continue;
-          else {
-            tail++;
-            distance--;
-          }
-      }
-
-      top[head].z = frame[pos]&0x0000FFFF;
-      top[head].x = j+1;
-      top[head].y = i;
-      head++;
-      distance++;
-
-      if (head >= length)
-          head = 0;
+      if (add >= length)
+          add = 0;
 
       //if (head == tail || top[head] != nullptr)
-      if (distance == length)
+      if (dis == length)
           overflow = true;
     }
   }
+
+  head = add;
+  distance = dis;
 }
 
 //Obsolete
