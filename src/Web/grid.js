@@ -1,5 +1,5 @@
 var canvas = document.getElementById("renderCanvas");
-var engine = new BABYLON.Engine(canvas, true);
+var engine = new BABYLON.Engine(canvas, false);
 
 console.log(window.location.href);
 
@@ -11,15 +11,17 @@ function Get(url){
   return Httpreq.responseText;
 };
 
-var data = JSON.parse(Get("json/data1.json"));
-console.log(data.data);
+var data = JSON.parse(Get("json/data2.json"));
+console.log(data);
+
+console.log(data.data[0].point.x);
 
 
 
 var createScene = function () {
     var scene = new BABYLON.Scene(engine);
 
-    var camera = new BABYLON.ArcRotateCamera("Camera", 3 * Math.PI / 2, Math.PI / 8, 50, BABYLON.Vector3.Zero(), scene);
+    var camera = new BABYLON.FreeCamera("FreeCamera", BABYLON.Vector3.Zero(), scene);
 
     camera.attachControl(canvas, true);
 
@@ -31,9 +33,11 @@ var createScene = function () {
     space = dash * 10
     dnum = 0
 
-    for (i = 0; i<data.size; i++) {
+    for (i = 0; i<10000; i++) {
       var box = BABYLON.Mesh.CreateBox("box", 1.0, scene);
-      box.position = new BABYLON.Vector3(data.data[i].point.x, data.data[i].y, data.data[i].z);
+      box.position.x = data.data[i].point.x;
+      box.position.y = data.data[i].point.y;
+      box.position.z = data.data[i].point.z;
     }
 
     for (i = -num; i <= num; i++){

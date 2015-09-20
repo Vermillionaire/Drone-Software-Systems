@@ -53,14 +53,19 @@ int main(int argc, char** argv) {
 
     cp->joinAll();
 	//	wp.stopServer();
+		std::cout << "Average Times:\n";
+		std::cout << "Put: " << DataControl::timer << "/" << DataControl::tcount << "=" << (DataControl::timer/DataControl::tcount/1000000) << "ms" << std::endl;
+		std::cout << "Get: " << DataControl::gett << "/" << DataControl::gcount << "=" << (DataControl::gett/DataControl::gcount/1000000) << "ms" << std::endl;
+		std::cout << "Compute: " << DataControl::ctimer << "/" << DataControl::ccount << "=" << (DataControl::ctimer/DataControl::ccount/1000000) << "ms" << std::endl;
 
     delete cp;
     delete co;
 
-		WebPage wp;
-	  wp.startServer();
 
-		while (true) {};
+//		WebPage wp;
+//	  wp.startServer();
+
+//		while (true) {};
 		//seg fault
 		//wp.stopServer();
 

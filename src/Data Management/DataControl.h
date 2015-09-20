@@ -35,6 +35,15 @@ class DataControl
         //Temperary variables and functions
         static vector<string> outputData;
         static long frames;
+        //put
+        static double timer;
+        static int tcount;
+        //get
+        static double gett;
+        static int gcount;
+        //compute
+        static double ctimer;
+        static int ccount;
 
         freenect_context* ctx;
         freenect_device* dev;

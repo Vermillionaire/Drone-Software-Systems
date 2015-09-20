@@ -2,21 +2,34 @@
 #include "Log.h"
 #include <iostream>
 #include <thread>
+#include <chrono>
 
 SpinArray DataControl::buff(DataControl::width*DataControl::height*180);
 bool DataControl::ready = false;
 long DataControl::frames = 0;
 long DataControl::frameLimiter = 0;
 
-void DataControl::localCallback(freenect_device *ldev, void *data, uint32_t time) {
+double DataControl::timer = 0.0;
+int DataControl::tcount = 0;
+double DataControl::gett = 0.0;
+int DataControl::gcount = 0;
+double DataControl::ctimer = 0.0;
+int DataControl::ccount = 0;
+
+void DataControl::localCallback(freenect_device *ldev, void *data, uint32_t tm) {
+
+  auto start = std::chrono::high_resolution_clock::now();
   DataControl::frames++;
-  DataControl::ready = false;
+  //DataControl::ready = false;
 
 
   //This area could by moved to spin array to reduce calls tp the put function. It blocks anyways right?
   short * fm = (short*) data;
   buff.put(fm, DataControl::width, DataControl::height);
+  auto finish = std::chrono::high_resolution_clock::now();
 
+  DataControl::timer += std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start).count();
+  DataControl::tcount++;
   /*
   buff.lock();
   //std::cout << "Starting loop\n";
