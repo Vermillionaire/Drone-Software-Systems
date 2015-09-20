@@ -23,8 +23,7 @@ void DataControl::localCallback(freenect_device *ldev, void *data, uint32_t tm) 
   //DataControl::ready = false;
 
 
-  //This area could by moved to spin array to reduce calls tp the put function. It blocks anyways right?
-  short * fm = (short*) data;
+  int * fm = (int*) data;
   buff.put(fm, DataControl::width, DataControl::height);
   auto finish = std::chrono::high_resolution_clock::now();
 

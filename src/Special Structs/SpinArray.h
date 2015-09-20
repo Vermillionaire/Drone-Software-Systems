@@ -36,7 +36,7 @@ class SpinArray{
         void resetCount();
 
         bool put(short depth, short i, short j);
-        void put(short* frame, int width, int height);
+        void put(int* frame, int width, int height);
         void get(Point *array, int size);
         long getDistance();
         Point* get();

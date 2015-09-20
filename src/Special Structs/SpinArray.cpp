@@ -76,17 +76,17 @@ bool SpinArray::put(short depth, short i, short j) {
 
 };
 
-void SpinArray::put(short* frame, int width, int height) {
+void SpinArray::put(int* frame, int width, int height) {
   std::lock_guard<std::mutex> lock(mutex);
 
-  if (length/2 < distance && DataControl::frameLimiter != 500)
+  if (length>>1 < distance && DataControl::frameLimiter != 500)
     DataControl::frameLimiter++;
   else
     if (DataControl::frameLimiter != 0)
       DataControl::frameLimiter--;
 
   for (int i=0; i<height; i++) {
-    for (int j=0; j<width; j++) {
+    for (int j=0; j<width; j+=2) {
       int pos = width*i+j;
 
       if (overflow && !overwrite) {
@@ -96,8 +96,27 @@ void SpinArray::put(short* frame, int width, int height) {
           continue;
       }
 
-      top[head].z = frame[pos];
+      top[head].z = (frame[pos] & 0xFFFF0000)>>16;
       top[head].x = j;
+      top[head].y = i;
+      head++;
+      distance++;
+
+      if (head >= length)
+          head = 0;
+
+      if (distance == length) {
+          overflow = true;
+          if (!overwrite)
+            continue;
+          else {
+            tail++;
+            distance--;
+          }
+      }
+
+      top[head].z = frame[pos]&0x0000FFFF;
+      top[head].x = j+1;
       top[head].y = i;
       head++;
       distance++;
