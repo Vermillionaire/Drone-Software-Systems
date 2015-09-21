@@ -88,15 +88,19 @@ void SpinArray::put(int* frame, int width, int height) {
   int row = 0;
   int add = head;
   int dis = distance;
+  int len = length;
+  int loss = 0;
+  bool over_f = overflow;
+  bool over_w = overwrite;
 
   for (int i=0; i<height; i++) {
     row = i * width;
     for (int j=0; j<width; j++) {
 
-      if (overflow && !overwrite) {
-          lossCounter++;
-          if (distance < length)
-            overflow = false;
+      if (over_f && !over_w) {
+          loss++;
+          if (dis < len)
+            over_f = false;
           continue;
       }
 
@@ -106,18 +110,21 @@ void SpinArray::put(int* frame, int width, int height) {
       add++;
       dis++;
 
-      if (add >= length)
+      if (add >= len)
           add = 0;
 
       //if (head == tail || top[head] != nullptr)
-      if (dis == length)
-          overflow = true;
+      if (dis == len)
+          over_f = true;
     }
   }
 
   head = add;
   distance = dis;
+  overflow = over_f;
+  lossCounter += loss;
 }
+
 
 //Obsolete
 Point * SpinArray::get() {
