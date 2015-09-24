@@ -5,3 +5,4 @@ libs
 *.old
 log
 .Low-Level-Data-Management
+*.o

@@ -4,7 +4,7 @@
 #include <thread>
 #include <chrono>
 
-SpinArray DataControl::buff(DataControl::width*DataControl::height*180);
+SpinArray DataControl::buff(DataControl::width*DataControl::height*30);
 bool DataControl::ready = false;
 long DataControl::frames = 0;
 long DataControl::frameLimiter = 0;

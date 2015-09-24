@@ -16,13 +16,6 @@ class SpinArray{
 
         std::mutex mutex;
 
-        //Depth point. Contains the z value, pixel locations i and j, and the time
-        /*
-        struct DPoint {
-            short depth;
-            short i;
-            short j;
-        };*/
 
         //flag gets
         bool isOverwriting();

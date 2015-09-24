@@ -5,7 +5,6 @@
 #include "DataProcessing.h"
 #include "SpinArray.h"
 #include "Log.h"
-#include "WebPage.h"
 
 #include <iostream>
 #include <signal.h>
@@ -22,8 +21,6 @@ void signalHandler(int signal)
 	}
 }
 
-
-
 int main(int argc, char** argv) {
     Log::outln(argc, ": Number of args.");
 
@@ -32,34 +29,35 @@ int main(int argc, char** argv) {
 		signal(SIGQUIT, signalHandler);
 
 
-    DataControl *co = new DataControl();
+    //DataControl *co = new DataControl();
 
     if (argc >= 2) {
-        delete co;
+        //delete co;
         return 0;
     }
 
     DataProcessing *cp = new DataProcessing();
+		cp->epiphanyInit();
 
 		//WebPage wp;
 		//wp.startServer();
 
-    std::cout << "Running\n";
-		while (DataControl::ready && co->errorCheck()) {
-    }
+    //std::cout << "Running\n";
+		//while (DataControl::ready && co->errorCheck()) {
+    //}
 
     Log::outln("All done.");
-    Log::outln(DataControl::ready, "Ready value.");
+    //Log::outln(DataControl::ready, "Ready value.");
 
-    cp->joinAll();
+    //cp->joinAll();
 	//	wp.stopServer();
-		std::cout << "Average Times:\n";
-		std::cout << "Put: " << DataControl::timer << "/" << DataControl::tcount << "=" << (DataControl::timer/DataControl::tcount/1000000) << "ms" << std::endl;
-		std::cout << "Get: " << DataControl::gett << "/" << DataControl::gcount << "=" << (DataControl::gett/DataControl::gcount/1000000) << "ms" << std::endl;
-		std::cout << "Compute: " << DataControl::ctimer << "/" << DataControl::ccount << "=" << (DataControl::ctimer/DataControl::ccount/1000000) << "ms" << std::endl;
+		//std::cout << "Average Times:\n";
+		//std::cout << "Put: " << DataControl::timer << "/" << DataControl::tcount << "=" << (DataControl::timer/DataControl::tcount/1000000) << "ms" << std::endl;
+		//std::cout << "Get: " << DataControl::gett << "/" << DataControl::gcount << "=" << (DataControl::gett/DataControl::gcount/1000000) << "ms" << std::endl;
+		//std::cout << "Compute: " << DataControl::ctimer << "/" << DataControl::ccount << "=" << (DataControl::ctimer/DataControl::ccount/1000000) << "ms" << std::endl;
 
     delete cp;
-    delete co;
+    //delete co;
 
 
 //		WebPage wp;
