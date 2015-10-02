@@ -29,22 +29,23 @@ int main(int argc, char** argv) {
 		signal(SIGQUIT, signalHandler);
 
 
-    //DataControl *co = new DataControl();
+    DataControl *co = new DataControl();
 
-    if (argc >= 2) {
-        //delete co;
+
+    if (argc >= 2 || !DataControl::ready) {
+        delete co;
         return 0;
     }
 
     DataProcessing *cp = new DataProcessing();
 		cp->epiphanyInit();
+		cp->startThread();
 
 		//WebPage wp;
 		//wp.startServer();
 
-    //std::cout << "Running\n";
-		//while (DataControl::ready && co->errorCheck()) {
-    //}
+    std::cout << "Running\n";
+		while (DataControl::ready && co->errorCheck()) {}
 
     Log::outln("All done.");
     //Log::outln(DataControl::ready, "Ready value.");
@@ -56,8 +57,11 @@ int main(int argc, char** argv) {
 		//std::cout << "Get: " << DataControl::gett << "/" << DataControl::gcount << "=" << (DataControl::gett/DataControl::gcount/1000000) << "ms" << std::endl;
 		//std::cout << "Compute: " << DataControl::ctimer << "/" << DataControl::ccount << "=" << (DataControl::ctimer/DataControl::ccount/1000000) << "ms" << std::endl;
 
+		cp->join();
+		cp->epiphanyClose();
+
     delete cp;
-    //delete co;
+    delete co;
 
 
 //		WebPage wp;

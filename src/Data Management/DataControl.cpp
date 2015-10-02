@@ -20,10 +20,10 @@ void DataControl::localCallback(freenect_device *ldev, void *data, uint32_t tm) 
 
   auto start = std::chrono::high_resolution_clock::now();
   DataControl::frames++;
-  //DataControl::ready = false;
+  DataControl::ready = false;
 
 
-  int * fm = (int*) data;
+  short * fm = (short*) data;
   buff.put(fm, DataControl::width, DataControl::height);
   auto finish = std::chrono::high_resolution_clock::now();
 
@@ -49,13 +49,12 @@ void DataControl::localCallback(freenect_device *ldev, void *data, uint32_t tm) 
 
 
 bool DataControl::errorCheck() {
-    if (freenect_process_events(ctx) >= 0)
+    if (freenect_process_events(ctx) >= 0 && DataControl::ready)
         return true;
     return false;
 }
 
-DataControl::DataControl()
-{
+DataControl::DataControl() {
 
     //Initialize the library
 	int ret = freenect_init(&ctx, NULL);
@@ -127,8 +126,7 @@ DataControl::DataControl()
 }
 
 //Closes down the connect when the object is destroyed
-DataControl::~DataControl()
-{
+DataControl::~DataControl() {
     Log::outln("Device is shutting down!");
 
     if (dev != nullptr) {

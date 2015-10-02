@@ -26,13 +26,12 @@ class DataControl
         const static short brightness = 50;
         static long frameLimiter;
 
-        struct frame {
-            short pixel[width][height];
-        };
-
         static SpinArray buff;
 
-        //Temperary variables and functions
+
+        //static SpinArray buff;
+
+        //Temporary variables and functions
         static vector<string> outputData;
         static long frames;
         //put

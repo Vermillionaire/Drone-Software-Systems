@@ -76,7 +76,7 @@ bool SpinArray::put(short depth, short i, short j) {
 
 };
 
-void SpinArray::put(int* frame, int width, int height) {
+void SpinArray::put(short* frame, int width, int height) {
   std::lock_guard<std::mutex> lock(mutex);
 
   if (length>>1 < distance && DataControl::frameLimiter != 500)
@@ -109,6 +109,8 @@ void SpinArray::put(int* frame, int width, int height) {
       top[add].y = i;
       add++;
       dis++;
+
+      //std::cout << frame[row+j] << ", " << j << ", " << i << std::endl;
 
       if (add >= len)
           add = 0;

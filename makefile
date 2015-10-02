@@ -1,41 +1,73 @@
-include ./include.mk
 
 CC=g++
-CFLAGS=-std=c++11 -Wall -Os -g
+ACC=arm-linux-gnueabihf-g++-4.8
+CFLAGS=-std=c++11 -Wall -O2 -g
+ECC=e-gcc
+EFLAGS= -Wall -O -g
+EPIPHANY:=$(shell echo $(EPIPHANY_HOME))
+ELINK=$(EPIPHANY)/bsps/current/internal.ldf
+
 OBJS=obj/*.o
 LIBS=-lusb -lfreenect -lseasocks -le-hal -le-loader
+ELIB=-le-lib
 LDIR=-Llibs/libfreenect/build/lib -Llibs/seasocks/bin -L$(EPIPHANY)/tools/host/lib
-#IDIR=-Isrc/Data\ Management/ -Ilibs/libfreenect/include/ -Isrc/Special\ Structs/ -Isrc/Util
 
+DIR_D=src/Data\ Management/
+SRC_D=DataControl.cpp DataProcessing.cpp
+
+DIR_E=src/Epiphany/
+SRC_E=e_calc.c
+
+DIR_U=src/Util/
+SRC_U=main.cpp
+
+DIR_S=src/Special\ Structs/
+SRC_S=SpinArray.cpp
+
+IDIR=-I$(DIR_D) -Ilibs/libfreenect/include/ -I$(DIR_S) -I$(DIR_U) -I$(EPIPHANY)/tools/host/include
 NAME=drone_camera
 
-
-all: datamanagment main structs
-	@echo "Linking Objects:\n"
-	@$(CC) $(CFLAGS) $(OBJS) -o $(NAME) $(LDIR) $(LIBS)
+default: remote
+	
+all: datamanagment structs main epiphany
+	@mv *.o obj/
+	$(CC) $(CFLAGS) $(OBJS) -o $(NAME) $(LDIR) $(LIBS)
 
 main_only: main
-	@$(CC) $(CFLAGS) $(OBJS) -o $(NAME) $(LDIR) $(LIBS)
+	$(CC) $(CFLAGS) $(OBJS) -o $(NAME) $(LDIR) $(LIBS)
+
+remote: datamanagment_r structs_r main_r epiphany
+	chmod +x cross-compile.sh
+	./cross-compile.sh
+	rm *.o
+
+remote_link:
+	$(CC) $(CFLAGS) $(OBJS) -o $(NAME) $(LDIR) $(LIBS)
 
 datamanagment:
-	@echo "Compiling data management folder:"; \
-	cd src/Data\ Management; \
-	$(MAKE); \
-	cp *.o ../../obj; \
-	cd ../.. \
+	$(CC) $(CFLAGS) $(IDIR) $(addprefix $(DIR_D),$(SRC_D)) -c $(LDIR)
 
 structs:
-	@echo "Compiling special structs folder:"; \
-	cd src/Special\ Structs; \
-	pwd; \
-	$(MAKE); \
-	cp *.o ../../obj; \
-	cd ../..
+	$(CC) $(CFLAGS) $(IDIR) $(addprefix $(DIR_S),$(SRC_S)) -c $(LDIR)
 
 main:
-	@echo "Compiling the util classes:"; \
-	cd src/Util; \
-	pwd; \
-	$(MAKE); \
-	cp *.o ../../obj; \
-	cd ../..
+	$(CC) $(CFLAGS) $(IDIR) $(addprefix $(DIR_U),$(SRC_U)) -c $(LDIR)
+
+epiphany:
+	$(ECC) -T $(ELINK) $(EFLAGS) $(addprefix $(DIR_E),$(SRC_E)) -o e_calc.elf $(ELIB)
+	e-objcopy --srec-forceS3 --output-target srec e_calc.elf e_calc.srec
+
+e-debug:
+	$(ECC) $(EFLAGS) $(addprefix $(DIR_E),$(SRC_E)) -o e_calc.elf $(ELIB)
+
+datamanagment_r:
+	$(ACC) $(CFLAGS) $(IDIR) $(addprefix $(DIR_D),$(SRC_D)) -c $(LDIR)
+
+structs_r:
+	$(ACC) $(CFLAGS) $(IDIR) $(addprefix $(DIR_S),$(SRC_S)) -c $(LDIR)
+
+main_r:
+	$(ACC) $(CFLAGS) $(IDIR) $(addprefix $(DIR_U),$(SRC_U)) -c $(LDIR)
+
+clean:
+	rm *.o

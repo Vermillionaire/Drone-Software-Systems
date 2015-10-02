@@ -14,9 +14,11 @@ class DataProcessing {
 		DataProcessing();
 		~DataProcessing();
 
-		void joinAll();
+		void join();
     void epiphanyInit();
-    void startThreads();
+
+    void epiphanyClose();
+    void startThread();
     //std::unordered_map<Point,Point,PointHasher> mymap;
 
     const static int BASE = 0x3E000000;
@@ -24,7 +26,8 @@ class DataProcessing {
     //const static int NUM_CORES = 16;
 
 	private:
-    e_mem_t *mbuf;
+    //e_mem_t *mbuf;
+    e_epiphany_t *dev;
 
 		std::thread *thread1;
 		std::thread *thread2;
@@ -34,5 +37,6 @@ class DataProcessing {
 		void compute(int id);
 		void consume(int id);
 		void fpsCounter();
+    void epiphanyRun();
 
 };
