@@ -20,7 +20,6 @@ void DataControl::localCallback(freenect_device *ldev, void *data, uint32_t tm) 
 
   auto start = std::chrono::high_resolution_clock::now();
   DataControl::frames++;
-  DataControl::ready = false;
 
 
   short * fm = (short*) data;
@@ -43,6 +42,8 @@ void DataControl::localCallback(freenect_device *ldev, void *data, uint32_t tm) 
   }
   buff.unlock();
   */
+
+  //DataControl::ready = false;
   std::this_thread::sleep_for(std::chrono::milliseconds(frameLimiter));
 
 };

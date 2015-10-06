@@ -15,7 +15,7 @@ class DataProcessing {
 		~DataProcessing();
 
 		void join();
-    void epiphanyInit();
+    int epiphanyInit();
 
     void epiphanyClose();
     void startThread();

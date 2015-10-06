@@ -8,6 +8,8 @@ const float scaleFactor = .0021;
 //half width and height
 const int w2 = 320;
 const int h2 = 240;
+const int MAX_SIZE = 1000;
+
 
 DataProcessing::DataProcessing() { Log::outln("Data processing init."); };
 
@@ -15,18 +17,18 @@ DataProcessing::~DataProcessing() {
 	Log::outln("Finished processing.");
 
 	delete thread1;
-	//delete fpsc;
+	delete fpsc;
 
 };
 
 void DataProcessing::startThread() {
 	thread1 = new std::thread(&DataProcessing::epiphanyRun, this);
-	//fpsc = new std::thread(&DataProcessing::fpsCounter, this);
+	fpsc = new std::thread(&DataProcessing::fpsCounter, this);
 }
 
 //Need to get header file to compile on this system
 //Make sure Home is set: EPIPHANY_HDF=”${EPIPHANY_HOME}/bsps/parallella/parallella.xml”
-void DataProcessing::epiphanyInit() {
+int DataProcessing::epiphanyInit() {
 	std::cout << "Starting Epiphany device!" << std::endl;
 
 	int ret = 0;
@@ -41,7 +43,7 @@ void DataProcessing::epiphanyInit() {
 	else {
 		std::cout << "Failed to start!" << std::endl;
 		e_finalize();
-		return;
+		return -1;
 	}
 
 	ret = e_reset_system();
@@ -50,7 +52,7 @@ void DataProcessing::epiphanyInit() {
 	else {
 		std::cout << "Couldn't reset?" << std::endl;
 		e_finalize();
-		return;
+		return -1;
 	}
 
 	ret = e_get_platform_info(&platform);
@@ -59,7 +61,7 @@ void DataProcessing::epiphanyInit() {
 	else {
 		std::cout << "No info :(" << std::endl;
 		e_finalize();
-		return;
+		return -1;
 	}
 
 	std::cout << "Starting Epiphany cores!" << std::endl;
@@ -74,7 +76,7 @@ void DataProcessing::epiphanyInit() {
 	else {
 		std::cout << "Did not open!" << std::endl;
 		e_finalize();
-		return;
+		return -1;
 	}
 
 	ret = e_load_group("e_calc.srec", dev, 0, 0, 4, 4, E_FALSE);
@@ -83,33 +85,42 @@ void DataProcessing::epiphanyInit() {
 	else {
 		std::cout << "Failed to load Program!" << std::endl;
 		e_finalize();
-		return;
+		return -1;
 	}
-	/*
-	int e_reset_system();
-	int e_reset_group(e_epiphany_t *dev);
-	int e_start(e_epiphany_t *dev, unsigned row, unsigned col);
-	int e_start_group(e_epiphany_t *dev);
-	int e_signal(e_epiphany_t *dev, unsigned row, unsigned col);
-	int e_halt(e_epiphany_t *dev, unsigned row, unsigned col);
-	int e_resume(e_epiphany_t *dev, unsigned row, unsigned col);
 
-	int e_load(char *executable, e_epiphany_t *dev, unsigned row, unsigned col, e_bool_t start);
-	googint e_load_group(char *executable, e_epiphany_t *dev, unsigned row, unsigned col, unsigned rows, unsigned cols, e_bool_t start);
-	*/
+	std::cout << "Setting shared memory to all zeros" << std::endl;
+	e_mem_t mem;
+	int zero = 0;
+	int meg32 = 1000*1000*8;
+
+	ret = e_alloc(&mem, 0, meg32*sizeof(int));
+	if (ret == E_OK)
+		std::cout << "Allocated wipe memory!" << std::endl;
+	else {
+		std::cout << "Failed to alocate wipe memory!" << std::endl;
+		e_finalize();
+		return -1;
+	}
+
+	//Writes zero value to each value the size of an int, for 32 Mb
+	for (int i=0; i<meg32; i++) {
+		ret = e_write(&mem, 0, 0, i*4, &zero, 4);
+	}
+
+	return 0;
 }
 
 void DataProcessing::epiphanyRun() {
-
-	e_mem_t dbug_size;
-	e_mem_t dbug_text;
 	e_mem_t mbuf;
 
+	std::cout << "\n\nStarting Data processing with epiphany cores!\n";
+
 	//Alocate memory for all sixteen cores
-	int data_objects = 5;
-	int data_size = sizeof(PointKey)*data_objects;
-	int header_size = sizeof(int)*2;
+	int data_size = sizeof(PointKey)*MAX_SIZE;
+	int header_size = sizeof(int)*3;
 	int num_cores = 16;
+
+	//std::cout << "Data size = " << header_size << std::endl;
 
 	int ret = e_alloc(&mbuf, 0, (header_size + data_size)*num_cores);
 	if (ret == E_OK)
@@ -120,48 +131,243 @@ void DataProcessing::epiphanyRun() {
 		return;
 	}
 
-
-	PointKey pk;
-	pk.p.x = 267;
-	pk.p.y = 17;
-	pk.p.z = 3186;
-	pk.key = 0;
-
-	PointKey pArray[data_objects];
-
-
-
-	for (int i=0; i<data_objects; i++)
-		pArray[i] = pk;
-
-	std::cout << 0 << ": Status Code." << std::endl;
-	std::cout << data_objects << ": Size." << std::endl;
-	std::cout << pArray[0].p.x << ": X." << std::endl;
-	std::cout << pArray[0].p.y << ": Y." << std::endl;
-	std::cout << pArray[0].p.z << ": Z." << std::endl;
-	std::cout << pArray[0].key << ": Hash." << std::endl;
-
-
+	//Sets the host status codes to 2
+	int init_code = 2;
 	for (int i=0; i<num_cores; i++) {
-		int init_code = 0;
 		int offset = (header_size + data_size)*i;
-		e_write(&mbuf, 0, 0, offset, &init_code, 4);
-		e_write(&mbuf, 0, 0, offset + 4, &data_objects, 4);
-		e_write(&mbuf, 0, 0, offset + 8, &pArray, data_size);
+		ret = e_write(&mbuf, 0, 0, offset, &init_code, 4);
 
-		std::cout << "I = " << i << " Offset = " << offset << std::endl;
+		if (ret < 4)
+			std::cout << "Did not write the start codes correctly" << std::endl;
 	}
 
-	bool not_done = false;
+	ret = e_start_group(dev);
+	//ret = e_start(dev, 0, 0);
+	//ret = e_start(dev, 0, 1);
+	//ret = e_start(dev, 0, 2);
+	if (ret == E_OK)
+		std::cout << "Started!" << std::endl;
+	else {
+		std::cout << "Failed to start!" << std::endl;
+		e_finalize();
+		return;
+	}
+
+	bool not_done = true;
+	bool shutdown = false;
+	bool wait = false;
+	int num_errors = 0;
+	PointKey *pArray = new PointKey[MAX_SIZE];
+
+	//Ststus code loggers
+	int code_0 = 0;
+	int code_1 = 0;
+	int code_2 = 0;
+	int code_3 = 0;
+	int code_7 = 0;
+	int code_8 = 0;
+	int code_9 = 0;
+	int code_other = 0;
+
+	//Pregenerate the offset codes
+	int offset_codes[16];
+	for (int i=0; i<16; i++) {
+		offset_codes[i] = (header_size + data_size)*i;
+		std::cout << "Offset " << i << ": " << std::hex << offset_codes[i] << std::dec << std::endl;
+	}
+
 	while (not_done) {
-		/* code */
+		wait = false;
+		//std::cout << "DISTANCE: " << DataControl::buff.getDistance() << std::endl;
+
+		//Reads through the status codes of the cores
+		for (int i=0; i<num_cores; i++) {
+			int core_code = 0;
+			e_read(&mbuf, 0, 0, offset_codes[i] + 4, &core_code, 4);
+		//	std::cout << "CORE: "<< i << "|" << core_code << "  ";
+
+			int init_code = 0;
+			switch (core_code) {
+				case 0:
+					code_0++;
+					if (!shutdown) {
+						//Bad error, faulty core
+						num_errors++;
+						init_code = 0;
+						e_write(&mbuf, 0, 0, offset_codes[i], &init_code, 4);
+					}
+					break;
+				case 1:
+					code_1++;
+					break;
+				case 2:
+					init_code = 3;
+					e_write(&mbuf, 0, 0, offset_codes[i], &init_code, 4);
+					code_2++;
+					break;
+				case 3:
+					code_3++;
+					break;
+				case 7:
+					code_7++;
+					break;
+				case 8:
+					num_errors++;
+					init_code = 2;
+					e_write(&mbuf, 0, 0, offset_codes[i], &init_code, 4);
+					code_8++;
+					break;
+				case 9:
+					wait = true;
+					code_9++;
+					break;
+				default:
+					code_other++;
+					break;
+			}
+		}
+		//std::cout << std::endl;
+
+
+		int num_done = 0;
+		//Reads through the status codes of the cores
+		for (int i=0; i<num_cores; i++) {
+			int host_code = 0;
+			e_read(&mbuf, 0, 0, offset_codes[i], &host_code, 4);
+
+		//	std::cout << "HOST: "<< i << "|" << host_code << "  ";
+
+			int init_code = 0;
+			switch (host_code) {
+				case 0:
+					num_done++;
+					break;
+				case 1:
+					break;
+				case 2:
+					{
+						if (shutdown) {
+							//if shutdown in progress, set host status code to zero instead of writing data
+							init_code = 0;
+							e_write(&mbuf, 0, 0, offset_codes[i], &init_code, 4);
+						}
+
+						int distance = DataControl::buff.getDistance();
+
+						if( distance > 0 ) {
+							if( distance > MAX_SIZE )
+								distance = MAX_SIZE;
+
+							DataControl::buff.get(pArray, distance);
+
+							init_code = 1;
+							e_write(&mbuf, 0, 0, offset_codes[i] + 8, &distance, 4);
+							e_write(&mbuf, 0, 0, offset_codes[i] + 12, pArray, sizeof(PointKey)*distance);
+							e_write(&mbuf, 0, 0, offset_codes[i], &init_code, 4);
+						}
+						else if(DataControl::ready) {
+							continue;
+						}
+						else {
+							shutdown = true;
+						}
+
+						break;
+					}
+				case 3:
+					//Read data here
+					init_code = 2;
+					e_write(&mbuf, 0, 0, offset_codes[i], &init_code, 4);
+					break;
+				default:
+					break;
+
+			}
+		}
+		//std::cout << std::endl;
+
+
+		if (num_done == num_cores && !wait)
+			not_done = false;
+	}
+
+	/*
+	//Wait for the cores to finish processing, maybe not necessary
+	int wait_counter = 0;
+	while (true) {
+		int num_done = 0;
+		for (int i=0; i<num_cores; i++) {
+			int core_code = 0;
+			e_read(&mbuf, 0, 0, offset_codes[i] + 4, &core_code, 4);
+			if (core_code == 0)
+				num_done++;
+			}
+
+			if (num_done == num_cores)
+				break;
+	}*/
+
+	std::cout << "Computation Done." << std::endl;
+	std::cout << "(ERROR: " << num_errors << ")" << std::endl;
+	std::cout << "STATUS-0: " << code_0 << std::endl;
+	std::cout << "STATUS-1: " << code_1 << std::endl;
+	std::cout << "STATUS-2: " << code_2 << std::endl;
+	std::cout << "STATUS-3: " << code_3 << std::endl;
+	std::cout << "STATUS-7: " << code_7 << std::endl;
+	std::cout << "STATUS-8: " << code_8 << std::endl;
+	std::cout << "STATUS-9: " << code_9 << std::endl;
+	std::cout << "STATUS-OTHER: " << code_other << std::endl;
+
+
+	for (int i=1; i<=num_cores; i++) {
+		e_mem_t dbug_size;
+		e_mem_t dbug_text;
+
+		int base = 0x00100000*i;
+		int text_size = 0;
+		int num = 0;
+		int offset = (header_size + data_size)*(i-1);
+
+		e_alloc(&dbug_size, base, sizeof(int)*2);
+		e_read(&dbug_size, 0, 0, 0, &text_size, sizeof(int));
+		e_read(&dbug_size, 0, 0, 4, &num, sizeof(int));
+
+		if (text_size == 0) {
+			int status = 0;
+			e_read(&mbuf, 0, 0, offset, &status, sizeof(int));
+			std::cout << "No text from Core " << num << " (CODE: " << status << ")" << std::endl;
+			e_free(&dbug_size);
+			e_free(&dbug_text);
+			continue;
+		}
+
+
+		e_alloc(&dbug_text, base + 8, sizeof(char)*text_size);
+		char text[text_size];
+		e_read(&dbug_text, 0, 0, 0, &text, sizeof(char)*text_size);
+		int status_c = 0;
+		e_read(&mbuf, 0, 0, offset+4, &status_c, sizeof(int));
+		int status_h = 0;
+		e_read(&mbuf, 0, 0, offset, &status_h, sizeof(int));
+
+		std::cout << "//////Core " << num << " Debug//////" << std::endl;
+		std::cout << "Status code host = " << status_h << std::endl;
+		std::cout << "Status code core = " << status_c << std::endl;
+		std::cout << "Text size=" << text_size << std::endl;
+
+		for (int i=0; i<text_size; i++)
+			std::cout << text[i];
+		std::cout << std::endl;
+
+		e_free(&dbug_size);
+		e_free(&dbug_text);
+
 	}
 
 	e_free(&mbuf);
-	e_free(&dbug_size);
-	e_free(&dbug_text);
 
-	std::cout << "Done running" << std::endl;
+
+	std::cout << "Done running\n\n" << std::endl;
 
 /*
 	auto start = std::chrono::high_resolution_clock::now();
@@ -249,7 +455,8 @@ void DataProcessing::epiphanyClose() {
 	delete dev;
 }
 
-void DataProcessing::compute(int id) {
+//Old
+void DataProcessing::compute(int id) {/*
 	//std::this_thread::yield();
 	Log::outln(id, "Thread # starting.");
 
@@ -261,7 +468,7 @@ void DataProcessing::compute(int id) {
 		//SpinArray::DPoint * point = DataControl::buff.get();
 
 		auto start = std::chrono::high_resolution_clock::now();
-		Point * p = new Point[size];
+		PointKey * p = new PointKey[size];
 		DataControl::buff.get(p, size);
 		auto finish = std::chrono::high_resolution_clock::now();
 		DataControl::gett += std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start).count();
@@ -286,15 +493,17 @@ void DataProcessing::compute(int id) {
 	} while (DataControl::ready);
 
 	Log::outln(id, "Thread # finished.");
-
+*/
 };
 
+//Old
 void DataProcessing::consume(int id) {
+	/*
 	while ( DataControl::ready) {
 		//std::chrono::milliseconds(10);
 		//std::cout << "Consumer " << id << "consuming.\n";
 		DataControl::buff.get();
-	}
+	}*/
 };
 
 void DataProcessing::fpsCounter() {
@@ -305,6 +514,7 @@ void DataProcessing::fpsCounter() {
 		DataControl::buff.printSize();
 		std::cout << " FPS:" << DataControl::frames << std::endl;
 		DataControl::frames = 0;
+	//	DataControl::ready = false;
 
 	}
 }
@@ -312,6 +522,6 @@ void DataProcessing::fpsCounter() {
 void DataProcessing::join() {
 	Log::outln("Waiting for threads...");
 	thread1->join();
-	//fpsc->join();
+	fpsc->join();
 	Log::outln("All threads finished.");
 };

@@ -83,7 +83,7 @@ void SpinArray::put(short* frame, int width, int height) {
     DataControl::frameLimiter++;
   else
     if (DataControl::frameLimiter != 0)
-      DataControl::frameLimiter--;
+      DataControl::frameLimiter -= 3;
 
   int row = 0;
   int add = head;
@@ -129,6 +129,7 @@ void SpinArray::put(short* frame, int width, int height) {
 
 
 //Obsolete
+/*
 Point * SpinArray::get() {
   std::lock_guard<std::mutex> lock(mutex);
 
@@ -149,18 +150,21 @@ Point * SpinArray::get() {
 
   return item;
 };
+*/
 
-
-void SpinArray::get(Point *array, int size) {
+void SpinArray::get(PointKey *array, int size) {
   std::lock_guard<std::mutex> lock(mutex);
 
   for (int i=0; i<size; i++) {
+    array[i].key = 0;
 
     //Creates empty gaps, fix pls
     if (distance == 0)
       continue;
 
-    array[i] = top[tail];
+    array[i].x = top[tail].x;
+    array[i].y = top[tail].y;
+    array[i].z = top[tail].z;
 
     //if (item  != nullptr) {
       //top[tail] = nullptr;

@@ -14,7 +14,9 @@ struct Point {
 };
 
 struct PointKey {
-  Point p;
+  int x;
+  int y;
+  int z;
   int key;
 };
 

@@ -38,7 +38,13 @@ int main(int argc, char** argv) {
     }
 
     DataProcessing *cp = new DataProcessing();
-		cp->epiphanyInit();
+		int ret = cp->epiphanyInit();
+		if (ret != 0) {
+			cp->epiphanyClose();
+			delete cp;
+			delete co;
+		}
+
 		cp->startThread();
 
 		//WebPage wp;
@@ -60,6 +66,7 @@ int main(int argc, char** argv) {
 		cp->join();
 		cp->epiphanyClose();
 
+		DataControl::buff.printSize();
     delete cp;
     delete co;
 
