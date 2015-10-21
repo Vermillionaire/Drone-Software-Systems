@@ -30,7 +30,7 @@ class SpinArray{
 
         bool put(short depth, short i, short j);
         void put(short* frame, int width, int height);
-        void get(PointKey *array, int size);
+        int get(PointKey *array, int size);
         long getDistance();
         //Point* get();
         void print();
@@ -44,7 +44,7 @@ class SpinArray{
         bool overflow;
         long lossCounter;
 
-        Point* top;
+        PointKey* top;
         long head;
         long tail;
         long length;

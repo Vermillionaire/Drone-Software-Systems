@@ -176,10 +176,19 @@ void DataProcessing::epiphanyRun() {
 		std::cout << "Offset " << i << ": " << std::hex << offset_codes[i] << std::dec << std::endl;
 	}
 
+	long long timer1 = 0;
+	long counter1 = 0;
+	long long timer2 = 0;
+	long counter2 = 0;
+	//long long timer3 = 0;
+	//long counter3 = 0;
+
 	while (not_done) {
 		wait = false;
 		//std::cout << "DISTANCE: " << DataControl::buff.getDistance() << std::endl;
 
+
+		auto start1 = std::chrono::high_resolution_clock::now();
 		//Reads through the status codes of the cores
 		for (int i=0; i<num_cores; i++) {
 			int core_code = 0;
@@ -227,14 +236,21 @@ void DataProcessing::epiphanyRun() {
 			}
 		}
 		//std::cout << std::endl;
+		auto finish1 = std::chrono::high_resolution_clock::now();
+		timer1 += std::chrono::duration_cast<std::chrono::nanoseconds>(finish1-start1).count();
+		counter1++;
 
-
+		auto start2 = std::chrono::high_resolution_clock::now();
 		int num_done = 0;
 		//Reads through the status codes of the cores
 		for (int i=0; i<num_cores; i++) {
 			int host_code = 0;
+			//auto start3 = std::chrono::high_resolution_clock::now();
 			e_read(&mbuf, 0, 0, offset_codes[i], &host_code, 4);
-
+			//auto finish3 = std::chrono::high_resolution_clock::now();
+		//	timer3 += std::chrono::duration_cast<std::chrono::nanoseconds>(finish3-start3).count();
+			//counter3++;
+			int size = 0;
 		//	std::cout << "HOST: "<< i << "|" << host_code << "  ";
 
 			int init_code = 0;
@@ -249,33 +265,51 @@ void DataProcessing::epiphanyRun() {
 						if (shutdown) {
 							//if shutdown in progress, set host status code to zero instead of writing data
 							init_code = 0;
-							e_write(&mbuf, 0, 0, offset_codes[i], &init_code, 4);
+							//e_write(&mbuf, 0, 0, offset_codes[i], &init_code, 4);
 						}
-
-						int distance = DataControl::buff.getDistance();
-
-						if( distance > 0 ) {
-							if( distance > MAX_SIZE )
-								distance = MAX_SIZE;
-
-							DataControl::buff.get(pArray, distance);
-
+						else
 							init_code = 1;
-							e_write(&mbuf, 0, 0, offset_codes[i] + 8, &distance, 4);
-							e_write(&mbuf, 0, 0, offset_codes[i] + 12, pArray, sizeof(PointKey)*distance);
+						//int distance = DataControl::buff.getDistance();
+
+
+						//if( distance > 0 ) {
+						//	if( distance > MAX_SIZE )
+						//		distance = MAX_SIZE;
+
+
+							  //std::cout << "In "  << std::endl;
+							size = DataControl::buff.get(pArray, MAX_SIZE);
+
+							if (size <= 0 )
+								continue;
+
+
+							e_write(&mbuf, 0, 0, offset_codes[i] + 8, &size, 4);
+							e_write(&mbuf, 0, 0, offset_codes[i] + 12, pArray, sizeof(PointKey)*size);
 							e_write(&mbuf, 0, 0, offset_codes[i], &init_code, 4);
-						}
-						else if(DataControl::ready) {
+
+						//}
+						if(DataControl::ready) {
 							continue;
 						}
 						else {
+							std::cout << "Shutting down...\n";
 							shutdown = true;
 						}
 
 						break;
 					}
 				case 3:
-					//Read data here
+					size = 0;
+					//std::cout << "Witing data to the cloud.\n";
+					e_read(&mbuf, 0, 0, offset_codes[i]+8, &size, 4);
+					e_read(&mbuf, 0, 0, offset_codes[i]+12, pArray, sizeof(PointKey)*size);
+
+					for(int j=0; j<size; j++) {
+						if (pArray[j].z != 0);
+							store.writeToFileBuffer(pArray[j].x, pArray[j].y, pArray[j].z);
+					}
+
 					init_code = 2;
 					e_write(&mbuf, 0, 0, offset_codes[i], &init_code, 4);
 					break;
@@ -285,27 +319,15 @@ void DataProcessing::epiphanyRun() {
 			}
 		}
 		//std::cout << std::endl;
+		auto finish2 = std::chrono::high_resolution_clock::now();
+		timer2 += std::chrono::duration_cast<std::chrono::nanoseconds>(finish2-start2).count();
+		counter2++;
 
 
 		if (num_done == num_cores && !wait)
 			not_done = false;
 	}
 
-	/*
-	//Wait for the cores to finish processing, maybe not necessary
-	int wait_counter = 0;
-	while (true) {
-		int num_done = 0;
-		for (int i=0; i<num_cores; i++) {
-			int core_code = 0;
-			e_read(&mbuf, 0, 0, offset_codes[i] + 4, &core_code, 4);
-			if (core_code == 0)
-				num_done++;
-			}
-
-			if (num_done == num_cores)
-				break;
-	}*/
 
 	std::cout << "Computation Done." << std::endl;
 	std::cout << "(ERROR: " << num_errors << ")" << std::endl;
@@ -317,6 +339,9 @@ void DataProcessing::epiphanyRun() {
 	std::cout << "STATUS-8: " << code_8 << std::endl;
 	std::cout << "STATUS-9: " << code_9 << std::endl;
 	std::cout << "STATUS-OTHER: " << code_other << std::endl;
+	std::cout << "TIME ONE: " << (timer1/counter1) << std::endl;
+	std::cout << "TIME TWO: " << (timer2/counter2) << std::endl;
+//	std::cout << "TIME THREE: " << (timer3/counter3) << std::endl;
 
 
 	for (int i=1; i<=num_cores; i++) {
@@ -366,81 +391,7 @@ void DataProcessing::epiphanyRun() {
 
 	e_free(&mbuf);
 
-
 	std::cout << "Done running\n\n" << std::endl;
-
-/*
-	auto start = std::chrono::high_resolution_clock::now();
-
-	e_write(mbuf, 0, 0, 0, &code, 4);
-	e_write(mbuf, 0, 0, 4, &size, 4);
-	e_write(mbuf, 0, 0, 8, &pArray, sizeof(PointKey)*size);
-
-	auto time1 = std::chrono::high_resolution_clock::now();
-
-
-	ret = e_start(dev, 0, 0);
-	if (ret == E_OK)
-		std::cout << "Started!" << std::endl;
-	else {
-		std::cout << "Failed to start!" << std::endl;
-		e_finalize();
-		return;
-	}
-	while (j!=-1 && c < 10000) {
-		e_read(mbuf, 0, 0, 0, &j, 4);
-		c++;
-	}
-
-	auto time2 = std::chrono::high_resolution_clock::now();
-
-	e_read(mbuf, 0, 0, 0, &code, 4);
-	e_read(mbuf, 0, 0, 4, &size, 4);
-	e_read(mbuf, 0, 0, 8, &pArray, sizeof(PointKey));
-
-	auto finish = std::chrono::high_resolution_clock::now();
-	long timer1 = 0;
-	long timer2 = 0;
-	long timer3 = 0;
-	timer1 = std::chrono::duration_cast<std::chrono::nanoseconds>(time1-start).count();
-	timer2 = std::chrono::duration_cast<std::chrono::nanoseconds>(time2-start).count();
-	timer3 = std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start).count();
-
-	std::cout << c << ": After" << std::endl;
-	std::cout << code << ": Status Code." << std::endl;
-	std::cout << size << ": Size." << std::endl;
-	std::cout << pArray[0].p.x << ": X." << std::endl;
-	std::cout << pArray[0].p.y << ": Y." << std::endl;
-	std::cout << pArray[0].p.z << ": Z." << std::endl;
-	std::cout << pArray[0].key << ": Hash." << std::endl;
-	std::cout << timer1 << ": Time Write." << std::endl;
-	std::cout << timer2 << ": Time Start." << std::endl;
-	std::cout << timer3 << ": Time Read." << std::endl;
-
-	e_alloc(&dbug_size, 0x00100000 , sizeof(int)*3);
-	int text_size = 0;
-	int core_row = 0;
-	int core_col = 0;
-	e_read(&dbug_size, 0, 0, 0x08, &core_col, sizeof(int));
-	e_read(&dbug_size, 0, 0, 0x04, &core_row, sizeof(int));
-	e_read(&dbug_size, 0, 0, 0x00, &text_size, sizeof(int));
-
-	std::cout << text_size << ": Size dbug." << std::endl;
-
-	e_alloc(&dbug_text, 0x0010000c, sizeof(char)*text_size);
-	char text[text_size];
-	e_read(&dbug_text, 0, 0, 0, &text, sizeof(char)*text_size);
-
-	std::cout << "//////Core " << core_row << "," << core_col << " Debug//////" << std::endl;
-	for (int i=0; i<text_size; i++)
-		std::cout << text[i];
-	std::cout << "////////////////////////////" << std::endl;
-	*/
-
-	//e_read(mbuf, 0, 0, 4, &j, 4);
-	//std::cout << j << ": Read test" << std::endl;
-	//j = 0;
-
 }
 
 void DataProcessing::epiphanyClose() {
@@ -455,56 +406,6 @@ void DataProcessing::epiphanyClose() {
 	delete dev;
 }
 
-//Old
-void DataProcessing::compute(int id) {/*
-	//std::this_thread::yield();
-	Log::outln(id, "Thread # starting.");
-
-	int size = 300;
-	do {
-		//std::cout << "Processing 300 points\n";
-	//	std::this_thread::sleep_for(std::chrono::milliseconds(1));
-
-		//SpinArray::DPoint * point = DataControl::buff.get();
-
-		auto start = std::chrono::high_resolution_clock::now();
-		PointKey * p = new PointKey[size];
-		DataControl::buff.get(p, size);
-		auto finish = std::chrono::high_resolution_clock::now();
-		DataControl::gett += std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start).count();
-		DataControl::gcount++;
-
-		start = std::chrono::high_resolution_clock::now();
-		//Point * p = new Point[size];
-		for (int i=0; i<size; i++) {
-			std::cout << p[i].x << ", " << p[i].y << ", " << p[i].z << std::endl;
-			//p[i].x = (int)((float)((p[i].x - w2) * (p[i].z + minDistance)) * scaleFactor)/10;
-			//p[i].y = (int)((float)((p[i].y - h2) * (p[i].z + minDistance)) * scaleFactor)/10;
-			//p[i].z = p[i].z / 10.0;
-		}
-
-		//std::make_pair<Point,Point>(p,p);
-		//mymap.insert(std::make_pair(*p,*p));
-		delete[] p;
-		finish = std::chrono::high_resolution_clock::now();
-		DataControl::ctimer += std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start).count();
-		DataControl::ccount++;
-
-	} while (DataControl::ready);
-
-	Log::outln(id, "Thread # finished.");
-*/
-};
-
-//Old
-void DataProcessing::consume(int id) {
-	/*
-	while ( DataControl::ready) {
-		//std::chrono::milliseconds(10);
-		//std::cout << "Consumer " << id << "consuming.\n";
-		DataControl::buff.get();
-	}*/
-};
 
 void DataProcessing::fpsCounter() {
 
@@ -512,9 +413,9 @@ void DataProcessing::fpsCounter() {
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
 		DataControl::buff.printSize();
-		std::cout << " FPS:" << DataControl::frames << std::endl;
+		std::cout << " FPS:" << DataControl::frames <<  " Store: " << store.getBufferLength()/1000 << "k" << std::endl;
 		DataControl::frames = 0;
-	//	DataControl::ready = false;
+		DataControl::ready = false;
 
 	}
 }

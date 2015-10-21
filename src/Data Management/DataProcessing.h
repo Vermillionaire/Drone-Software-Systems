@@ -3,6 +3,7 @@
  #include <unordered_map>
  #include "Point.h"
  #include "DataControl.h"
+ #include "DataStorage.h"
  #include "SpinArray.h"
  #include "Log.h"
  #include "e_hal.h"
@@ -28,6 +29,7 @@ class DataProcessing {
 	private:
     //e_mem_t *mbuf;
     e_epiphany_t *dev;
+    DataStorage store;
 
 		std::thread *thread1;
 		std::thread *thread2;

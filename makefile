@@ -8,12 +8,12 @@ EPIPHANY:=$(shell echo $(EPIPHANY_HOME))
 ELINK=$(EPIPHANY)/bsps/current/internal.ldf
 
 OBJS=obj/*.o
-LIBS=-lusb -lfreenect -lseasocks -le-hal -le-loader
+LIBS=-lusb -lfreenect -lseasocks -le-hal -le-loader #-lpcl_io -lpcl_common -lboost_system
 ELIB=-le-lib
-LDIR=-Llibs/libfreenect/build/lib -Llibs/seasocks/bin -L$(EPIPHANY)/tools/host/lib
+LDIR=-Llibs/libfreenect/build/lib -Llibs/seasocks/bin -L$(EPIPHANY)/tools/host/lib -Llibs/pcl/build/lib
 
 DIR_D=src/Data\ Management/
-SRC_D=DataControl.cpp DataProcessing.cpp
+SRC_D=DataControl.cpp DataProcessing.cpp DataStorage.cpp
 
 DIR_E=src/Epiphany/
 SRC_E=e_calc.c
@@ -24,11 +24,11 @@ SRC_U=main.cpp
 DIR_S=src/Special\ Structs/
 SRC_S=SpinArray.cpp
 
-IDIR=-I$(DIR_D) -Ilibs/libfreenect/include/ -I$(DIR_S) -I$(DIR_U) -I$(EPIPHANY)/tools/host/include
+IDIR=-I$(DIR_D) -Ilibs/libfreenect/include/ -I$(DIR_S) -I$(DIR_U) -I$(EPIPHANY)/tools/host/include -Ilibs/pcl/common/include/ -Ilibs/pcl/io/include/ -I/usr/include/eigen3/ -Ilibs/pcl/build/include
 NAME=drone_camera
 
 default: remote
-	
+
 all: datamanagment structs main epiphany
 	@mv *.o obj/
 	$(CC) $(CFLAGS) $(OBJS) -o $(NAME) $(LDIR) $(LIBS)

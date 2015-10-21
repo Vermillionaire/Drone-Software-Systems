@@ -1,10 +1,11 @@
 #include "SpinArray.h"
 #include <iostream>
+#include <stdio.h>
 
 SpinArray::SpinArray(const int arraySize) {
     length = arraySize;
 
-    top = new Point[arraySize];
+    top = new PointKey[arraySize];
     head = 0;
     tail = 0;
     distance = 0;
@@ -79,6 +80,8 @@ bool SpinArray::put(short depth, short i, short j) {
 void SpinArray::put(short* frame, int width, int height) {
   std::lock_guard<std::mutex> lock(mutex);
 
+  //std::cout << "PUTTING" << std::endl;
+
   if (length>>1 < distance && DataControl::frameLimiter != 500)
     DataControl::frameLimiter++;
   else
@@ -87,44 +90,64 @@ void SpinArray::put(short* frame, int width, int height) {
 
   int row = 0;
   int add = head;
-  int dis = distance;
+  //int dis = distance;
   int len = length;
-  int loss = 0;
+  //int loss = 0;
   bool over_f = overflow;
   bool over_w = overwrite;
+
+  PointKey p;
+  int point_size = sizeof(PointKey);
+
+  if( width * height > length - distance && !over_w) {
+    lossCounter += width * height;
+    return;
+  }
 
   for (int i=0; i<height; i++) {
     row = i * width;
     for (int j=0; j<width; j++) {
 
+      /*
       if (over_f && !over_w) {
           loss++;
           if (dis < len)
             over_f = false;
           continue;
-      }
+      }*/
 
+      p.z = frame[row+j];
+      p.x = j;
+      p.y = i;
+      p.key = 0;
+
+      //std::cout << point_size << "\t" << add << "\t" << distance << "\t" << tail   << "\t" << i << "\t" << j << "\n";
+      memcpy( &(top[add]), &p, point_size);
+      add++;
+
+      /*
       top[add].z = frame[row+j];
       top[add].x = j;
       top[add].y = i;
       add++;
-      dis++;
+      */
+      //dis++;
 
-      //std::cout << frame[row+j] << ", " << j << ", " << i << std::endl;
 
       if (add >= len)
           add = 0;
 
-      //if (head == tail || top[head] != nullptr)
-      if (dis == len)
-          over_f = true;
+      //if (dis == len)
+          //over_f = true;
     }
+
+
   }
 
   head = add;
-  distance = dis;
+  distance += width * height;
   overflow = over_f;
-  lossCounter += loss;
+  //lossCounter += loss;
 }
 
 
@@ -152,9 +175,46 @@ Point * SpinArray::get() {
 };
 */
 
-void SpinArray::get(PointKey *array, int size) {
-  std::lock_guard<std::mutex> lock(mutex);
+int SpinArray::get(PointKey *array, int size) {
+  //std::lock_guard<std::mutex> lock(mutex);
+  std::unique_lock<std::mutex> mutexLock(mutex);
 
+  //std::cout << "Size requested: " << size << " Distance: " << distance << std::endl;
+
+  if (size > distance) {
+    size = distance;
+    if (size == 0)
+      return 0;
+  }
+
+  //int point_size = sizeof(PointKey);
+  if ( size + tail <= length ) {
+    //std::cout << sizeof(PointKey) << "\t" << head << "\t" << distance << "\t" << tail << "\t" << length << "\n";
+    //printSize();
+    //std::cout << array << "\t" << array+sizeof(PointKey)*size << "\t" << top << "\t" << top + sizeof(PointKey)*tail << "\t" << std::endl;
+
+    memcpy(array, &top[tail], size);
+
+    distance -= size;
+    tail += size;
+
+    return size;
+  }
+  else {
+    //std::cout << "Alt 1 " << std::endl;
+    int rem = length - tail;
+    memcpy(array, &top[tail], rem);
+
+    //std::cout << "Alt 2 " << std::endl;
+    tail = 0;
+    memcpy(&array[rem], top, size - rem);
+    distance -= size;
+    tail += size - rem;
+    return size;
+  }
+
+
+  /*
   for (int i=0; i<size; i++) {
     array[i].key = 0;
 
@@ -173,9 +233,9 @@ void SpinArray::get(PointKey *array, int size) {
       tail = 0;
     else
       tail++;
-
-    distance--;
-  }
+    */
+    //distance--;
+  //}//
 
 };
 
@@ -202,7 +262,7 @@ void SpinArray::print() {
 }
 
 void SpinArray::printSize() {
-    int size = 100;
+    int size = 75;
     int scale = length / size;
 
     std::cout << "[";

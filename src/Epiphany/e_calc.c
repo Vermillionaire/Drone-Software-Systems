@@ -27,7 +27,7 @@ const float scaleFactor = .0021f;
 const float w2 = 320.0f;
 const float h2 = 240.0f;
 const int MAX_SIZE = 1000;
-const int SLEEP_TIME = 100000; //1 cycle ~ 1 ns
+const int SLEEP_TIME = 1000; //1 cycle ~ 1 ns
 
 //Core Status numbers
 //9 sleeping
@@ -169,9 +169,17 @@ int main(void) {
         p[i].z = -1;
       }
       else {
+        //s = "\nBefore: ";
+        //writeDebug(s, 9);
+        //printNum(p[i].z);
+
         p[i].x = (int)((((float)p[i].x - w2) * ((float)p[i].z + minDistance)) * scaleFactor * 0.1f);
-        p[i].y = (int)((((float)p[i].x - w2) * ((float)p[i].z + minDistance)) * scaleFactor * 0.1f);
+        p[i].y = (int)((((float)p[i].y - w2) * ((float)p[i].z + minDistance)) * scaleFactor * 0.1f);
         p[i].z = (int)((float)p[i].z * 0.1f);
+
+        //s = "\nAfter: ";
+        //writeDebug(s, 8);
+        //printNum(p[i].z);
       }
     }
 

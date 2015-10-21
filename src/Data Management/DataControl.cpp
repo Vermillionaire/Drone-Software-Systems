@@ -92,7 +92,7 @@ DataControl::DataControl() {
 	Log::outln(ret, "Device opened.");
 
   //Set IR brightness to max
-  ret = freenect_set_ir_brightness(dev, 50);
+  ret = freenect_set_ir_brightness(dev, 30);
   Log::outln(ret, "Brightness set to " + std::to_string(DataControl::brightness) );
 
   //Set the callback for retrieving data
