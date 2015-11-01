@@ -7,9 +7,13 @@
 #include <string>
 #include <thread>
 #include <string.h>
+//#include <fstream>
+//#include <iostream>
+#include <boost/asio.hpp>
 
 using namespace std;
 class SpinArray;
+using namespace boost::asio;
 
 class DataControl
 {
@@ -28,6 +32,10 @@ class DataControl
 
         static SpinArray buff;
 
+        //static fstream file;
+        static io_service ios;
+        static serial_port sp;
+        static unsigned char angle_buff[];
 
         //static SpinArray buff;
 
@@ -47,6 +55,8 @@ class DataControl
         freenect_context* ctx;
         freenect_device* dev;
     private:
+
+        void serial_callback(const boost::system::error_code& error, std::size_t bytes_transferred);
 
 
 };

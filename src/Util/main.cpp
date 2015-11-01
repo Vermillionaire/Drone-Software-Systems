@@ -11,6 +11,11 @@
 #include <thread>
 #include <chrono>
 
+#include <boost/asio.hpp>
+#include "boost/bind.hpp"
+#include "Serial.h"
+
+
 void signalHandler(int signal)
 {
 	if (signal == SIGINT
@@ -21,6 +26,10 @@ void signalHandler(int signal)
 	}
 }
 
+void serial_callback(const boost::system::error_code& error, std::size_t bytes_transferred) {
+  cout << "Read " << bytes_transferred << " bytes" << endl;
+}
+
 int main(int argc, char** argv) {
     Log::outln(argc, ": Number of args.");
 
@@ -29,6 +38,7 @@ int main(int argc, char** argv) {
 		signal(SIGQUIT, signalHandler);
 
 
+		/*
     DataControl *co = new DataControl();
 
 
@@ -37,7 +47,7 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-		
+
     DataProcessing *cp = new DataProcessing();
 		int ret = cp->epiphanyInit();
 		if (ret != 0) {
@@ -78,6 +88,38 @@ int main(int argc, char** argv) {
 //		while (true) {};
 		//seg fault
 		//wp.stopServer();
+		*/
+
+
+		string port = "/dev/ttyPS0";
+		//io_service ios;
+		//boost::asio::serial_port sp(ios);
+		/*
+		sp.open(port);
+		sp.set_option(boost::asio::serial_port::baud_rate(115200));
+		sp.set_option( boost::asio::serial_port_base::flow_control( boost::asio::serial_port_base::flow_control::none ) );
+	  sp.set_option( boost::asio::serial_port_base::parity( boost::asio::serial_port_base::parity::none ) );
+	  sp.set_option( boost::asio::serial_port_base::stop_bits( boost::asio::serial_port_base::stop_bits::one ) );
+	  sp.set_option( boost::asio::serial_port_base::character_size( 8 ) );
+
+		unsigned char angle_buff[50];
+		boost::asio::async_read(sp,boost::asio::buffer(angle_buff, 20), boost::asio::transfer_at_least(1), boost::bind(serial_callback, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+
+		string s = "1";
+		boost::asio::write(sp,boost::asio::buffer(s.c_str(),s.size()));
+		sp.read_some(boost::asio::buffer(angle_buff, 50));
+		std::cout << angle_buff << std::endl;
+		*/
+
+		Serial ser;
+		ser.open(port);
+		ser.start_read();
+	//	std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+		//ser.write_1();
+		//std::cout << ser.available() << std::endl;
+		std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+		ser.stop_read();
+		ser.close();
 
     return 0;
 }

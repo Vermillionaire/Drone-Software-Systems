@@ -14,11 +14,19 @@ class Log {
 			cout << i << ": " << s;
 		};
 
+		static void out(bool i, std::string s) {
+			cout << i << ": " << s;
+		};
+
 		static void out(std::string s) {
 			cout << "X: " << s << std::endl;
 		};
 
 		static void outln(int i, std::string s) {
+			cout << i << ": " << s << std::endl;
+		};
+
+		static void outln(bool i, std::string s) {
 			cout << i << ": " << s << std::endl;
 		};
 

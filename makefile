@@ -8,7 +8,7 @@ EPIPHANY:=$(shell echo $(EPIPHANY_HOME))
 ELINK=$(EPIPHANY)/bsps/current/internal.ldf
 
 OBJS=obj/*.o
-LIBS=-lusb -lfreenect -lseasocks -le-hal -le-loader #-lpcl_io -lpcl_common -lboost_system
+LIBS=-lusb -lfreenect -lseasocks -le-hal -le-loader -lboost_system -lpthread#-lpcl_io -lpcl_common -lboost_system
 ELIB=-le-lib
 LDIR=-Llibs/libfreenect/build/lib -Llibs/seasocks/bin -L$(EPIPHANY)/tools/host/lib -Llibs/pcl/build/lib
 
@@ -19,7 +19,7 @@ DIR_E=src/Epiphany/
 SRC_E=e_calc.c
 
 DIR_U=src/Util/
-SRC_U=main.cpp
+SRC_U=main.cpp Serial.cpp
 
 DIR_S=src/Special\ Structs/
 SRC_S=SpinArray.cpp

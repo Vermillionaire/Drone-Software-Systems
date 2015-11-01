@@ -415,7 +415,7 @@ void DataProcessing::fpsCounter() {
 		DataControl::buff.printSize();
 		std::cout << " FPS:" << DataControl::frames <<  " Store: " << store.getBufferLength()/1000 << "k" << std::endl;
 		DataControl::frames = 0;
-		DataControl::ready = false;
+		//DataControl::ready = false;
 
 	}
 }

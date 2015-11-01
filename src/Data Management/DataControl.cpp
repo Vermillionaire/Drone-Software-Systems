@@ -1,10 +1,18 @@
 #include "DataControl.h"
 #include "Log.h"
-#include <iostream>
 #include <thread>
 #include <chrono>
+#include "boost/bind.hpp"
+
+
+using namespace std;
 
 SpinArray DataControl::buff(DataControl::width*DataControl::height*30);
+//fstream DataControl::file("/dev/ttyPS0", ios::in | ios::out | ios::app);
+boost::asio::io_service DataControl::ios;
+boost::asio::serial_port DataControl::sp(ios, "/dev/ttyPS0");
+unsigned char DataControl::angle_buff[20];
+
 bool DataControl::ready = false;
 long DataControl::frames = 0;
 long DataControl::frameLimiter = 0;
@@ -20,6 +28,17 @@ void DataControl::localCallback(freenect_device *ldev, void *data, uint32_t tm) 
 
   auto start = std::chrono::high_resolution_clock::now();
   DataControl::frames++;
+
+  string s = "1";
+  //std::string result = "                       ";
+  //sp.async_read_some(boost::asio::buffer(result.c_str(),result.size()), nullptr);
+  boost::asio::write(sp,boost::asio::buffer(s.c_str(),s.size()));
+
+
+
+//  DataControl::file << "1";
+  //DataControl::file >> get;
+  //cout << result << endl;
 
 
   short * fm = (short*) data;
@@ -56,6 +75,13 @@ bool DataControl::errorCheck() {
 }
 
 DataControl::DataControl() {
+
+
+  //boost::asio::serial_port sp(ios, "/dev/ttyPS0");
+  //using namespace boost::asio;
+  sp.set_option(boost::asio::serial_port::baud_rate(115200));
+  boost::asio::async_read(sp,boost::asio::buffer(angle_buff, 20), boost::asio::transfer_at_least(5), boost::bind(&DataControl::serial_callback, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+  Log::outln(sp.is_open(), "Serial is open.");
 
     //Initialize the library
 	int ret = freenect_init(&ctx, NULL);
@@ -125,15 +151,21 @@ DataControl::DataControl() {
 
 
 }
+void DataControl::serial_callback(const boost::system::error_code& error, std::size_t bytes_transferred) {
+  cout << "Read " << bytes_transferred << " bytes" << endl;
+}
+
 
 //Closes down the connect when the object is destroyed
 DataControl::~DataControl() {
     Log::outln("Device is shutting down!");
 
     if (dev != nullptr) {
-        freenect_stop_depth(dev);
-        freenect_close_device(dev);
+      freenect_stop_depth(dev);
+      freenect_close_device(dev);
     }
     if (ctx != nullptr)
-        freenect_shutdown(ctx);
+      freenect_shutdown(ctx);
+  //  if (file != nullptr)
+      //file.close();
 }
