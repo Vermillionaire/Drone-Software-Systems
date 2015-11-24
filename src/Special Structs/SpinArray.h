@@ -15,6 +15,7 @@ class SpinArray{
         ~SpinArray();
 
         std::mutex mutex;
+        std::mutex other;
 
 
         //flag gets
@@ -38,6 +39,9 @@ class SpinArray{
         void lock();
         void unlock();
 
+        int getGot();
+        int getPut();
+
     private:
         //flags
         bool overwrite;
@@ -49,6 +53,9 @@ class SpinArray{
         long tail;
         long length;
         std::atomic<long> distance;
+
+        int putVal;
+        int gotVal;
 
 
 

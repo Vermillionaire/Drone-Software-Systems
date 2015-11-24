@@ -13,6 +13,9 @@ SpinArray::SpinArray(const int arraySize) {
     overwrite = false;
     overflow = false;
     lossCounter = 0;
+
+    putVal = 0;
+    gotVal = 0;
 };
 
 SpinArray::~SpinArray() {
@@ -47,6 +50,7 @@ void SpinArray::resetCount() {
 bool SpinArray::put(short depth, short i, short j) {
   //std::lock_guard<std::mutex> lock(mutex);
 
+
   if (length/2 < distance && DataControl::frameLimiter != 500)
     DataControl::frameLimiter++;
   else
@@ -78,15 +82,21 @@ bool SpinArray::put(short depth, short i, short j) {
 };
 
 void SpinArray::put(short* frame, int width, int height) {
-  std::lock_guard<std::mutex> lock(mutex);
+  std::lock_guard<std::mutex> lock(mutex); {
+  std::unique_lock<std::mutex> mutexLock(other); {
+
+  putVal += (width * height);
+}
 
   //std::cout << "PUTTING" << std::endl;
 
+  /*
   if (length>>1 < distance && DataControl::frameLimiter != 500)
     DataControl::frameLimiter++;
   else
     if (DataControl::frameLimiter != 0)
       DataControl::frameLimiter -= 3;
+      */
 
   int row = 0;
   int add = head;
@@ -147,6 +157,7 @@ void SpinArray::put(short* frame, int width, int height) {
   head = add;
   distance += width * height;
   overflow = over_f;
+}
   //lossCounter += loss;
 }
 
@@ -177,8 +188,12 @@ Point * SpinArray::get() {
 
 int SpinArray::get(PointKey *array, int size) {
   //std::lock_guard<std::mutex> lock(mutex);
-  std::unique_lock<std::mutex> mutexLock(mutex);
+  std::unique_lock<std::mutex> mutexLock(mutex); {
 
+  std::unique_lock<std::mutex> mutexLock(other); {
+
+  gotVal += size;
+}
   //std::cout << "Size requested: " << size << " Distance: " << distance << std::endl;
 
   if (size > distance) {
@@ -212,7 +227,7 @@ int SpinArray::get(PointKey *array, int size) {
     tail += size - rem;
     return size;
   }
-
+}
 
   /*
   for (int i=0; i<size; i++) {
@@ -291,7 +306,6 @@ void SpinArray::printSize() {
             else
               std::cout << "X";
         }
-
     }
 
     std::cout << "] l[" << length << "] h[" << head << "] t[" << tail << "] d[" << distance << "] L[" << lossCounter << "]" ;
@@ -303,4 +317,18 @@ void SpinArray::lock() {
 
 void SpinArray::unlock() {
   mutex.unlock();
+}
+
+int SpinArray::getGot() {
+  std::lock_guard<std::mutex> lock(other);
+  int ret = gotVal;
+  gotVal = 0;
+  return ret;
+}
+
+int SpinArray::getPut() {
+  std::lock_guard<std::mutex> lock(other);
+  int ret = putVal;
+  putVal = 0;
+  return ret;
 }

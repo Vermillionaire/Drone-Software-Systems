@@ -63,15 +63,22 @@ void DataControl::localCallback(freenect_device *ldev, void *data, uint32_t tm) 
   */
 
   //DataControl::ready = false;
-  std::this_thread::sleep_for(std::chrono::milliseconds(frameLimiter));
+  //std::this_thread::sleep_for(std::chrono::milliseconds(frameLimiter));
+  std::this_thread::sleep_for(std::chrono::milliseconds(5));
 
 };
 
 
 bool DataControl::errorCheck() {
-    if (freenect_process_events(ctx) >= 0 && DataControl::ready)
+    if (freenect_process_events(ctx) >= 0 && DataControl::ready) {
+        error_state = true;
         return true;
-    return false;
+      }
+
+    if (error_state)
+      return true;
+    else
+      return false;
 }
 
 DataControl::DataControl() {
@@ -79,9 +86,9 @@ DataControl::DataControl() {
 
   //boost::asio::serial_port sp(ios, "/dev/ttyPS0");
   //using namespace boost::asio;
-  sp.set_option(boost::asio::serial_port::baud_rate(115200));
-  boost::asio::async_read(sp,boost::asio::buffer(angle_buff, 20), boost::asio::transfer_at_least(5), boost::bind(&DataControl::serial_callback, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
-  Log::outln(sp.is_open(), "Serial is open.");
+  //sp.set_option(boost::asio::serial_port::baud_rate(115200));
+  //boost::asio::async_read(sp,boost::asio::buffer(angle_buff, 20), boost::asio::transfer_at_least(5), boost::bind(&DataControl::serial_callback, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+//  Log::outln(sp.is_open(), "Serial is open.");
 
     //Initialize the library
 	int ret = freenect_init(&ctx, NULL);
@@ -151,6 +158,7 @@ DataControl::DataControl() {
 
 
 }
+
 void DataControl::serial_callback(const boost::system::error_code& error, std::size_t bytes_transferred) {
   cout << "Read " << bytes_transferred << " bytes" << endl;
 }
@@ -161,11 +169,80 @@ DataControl::~DataControl() {
     Log::outln("Device is shutting down!");
 
     if (dev != nullptr) {
-      freenect_stop_depth(dev);
+      //freenect_stop_depth(dev);
       freenect_close_device(dev);
     }
     if (ctx != nullptr)
       freenect_shutdown(ctx);
   //  if (file != nullptr)
       //file.close();
+}
+
+int DataControl::clean_restart() {
+  std::cout << "Cleaning up old freenect context." << std::endl;
+
+  if (dev != nullptr)
+    freenect_close_device(dev);
+
+  if (ctx != nullptr)
+    freenect_shutdown(ctx);
+
+    std::cout << "Recreating freenect context." << std::endl;
+
+    int ret = freenect_init(&ctx, NULL);
+  	if (ret < 0)
+          return ret;
+
+  	Log::outln(ret, "Initialized library.");
+
+    freenect_set_log_level(ctx, FREENECT_LOG_ERROR);
+
+    //freenect_device_flags test = (freenect_device_flags) FREENECT_DEVICE_CAMERA | FREENECT_DEVICE_MOTOR;
+    freenect_select_subdevices(ctx, (freenect_device_flags) 0x03);
+
+    //Check if there are devices to connect to
+    ret = freenect_num_devices(ctx);
+    if (ret < 0)
+        return ret;
+  	else if (ret == 0) {
+          Log::outln("No Devices were detected");
+          return -1;
+  	}
+
+  	Log::outln(ret, "Found devices.");
+
+    //Open the camera device
+  	ret = freenect_open_device(ctx, &dev, 0);
+  	if (ret < 0)
+  		return -1;
+
+  	Log::outln(ret, "Device opened.");
+
+    //Set IR brightness to max
+    ret = freenect_set_ir_brightness(dev, 30);
+    Log::outln(ret, "Brightness set to " + std::to_string(DataControl::brightness) );
+
+    //Set the callback for retrieving data
+    freenect_set_depth_callback(dev, localCallback);
+    Log::outln("Callback set.");
+
+      //Set the debth options
+  	ret = freenect_set_depth_mode( dev, freenect_find_depth_mode(FREENECT_RESOLUTION_MEDIUM, FREENECT_DEPTH_MM));
+  	if (ret < 0)
+  		return ret;
+
+    Log::outln(ret, "Set depth mode.");
+
+    //Start the data retrival
+    ret = freenect_start_depth(dev);
+    if (ret < 0)
+  	 return ret;
+
+  	Log::outln(ret, "Started debth.");
+
+    //Flag to indicated the device is ready and running
+    error_state = false;
+    Log::outln("Finished reinitializing the device");
+
+    return 0;
 }

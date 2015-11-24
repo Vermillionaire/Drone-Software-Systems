@@ -36,6 +36,7 @@ class DataControl
         static io_service ios;
         static serial_port sp;
         static unsigned char angle_buff[];
+        int clean_restart();
 
         //static SpinArray buff;
 
@@ -56,6 +57,7 @@ class DataControl
         freenect_device* dev;
     private:
 
+        bool error_state = false;
         void serial_callback(const boost::system::error_code& error, std::size_t bytes_transferred);
 
 

@@ -26,8 +26,8 @@ const float scaleFactor = .0021f;
 //half width and height
 const float w2 = 320.0f;
 const float h2 = 240.0f;
-const int MAX_SIZE = 1000;
-const int SLEEP_TIME = 1000; //1 cycle ~ 1 ns
+const int MAX_SIZE = 10000;
+const int SLEEP_TIME = 10; //1 cycle ~ 1 ns
 
 //Core Status numbers
 //9 sleeping
@@ -155,8 +155,8 @@ int main(void) {
     }
 
     //Allocate array for the data and copy it to the core
-    point p[h.size];
-    e_dma_copy( &p, (void*)(BASE + 0x0C), sizeof(point)*h.size);
+    point p[1000];
+    e_dma_copy( &p, (void*)(BASE + 0x0C), sizeof(point)*1000);
 
 
     int i=0;

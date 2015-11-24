@@ -29,9 +29,10 @@ DataStorage::~DataStorage() {
 }
 
 void DataStorage::writeToFileBuffer(int x, int y, int z) {
+  std::lock_guard<std::mutex> lock(mutex);
   if (z < 0)
     return;
-    
+
   buffer += to_string(x) + " " + to_string(y) + " " + to_string(z) + " 1\n";
   /*
   cloud->points[counter].x = x;

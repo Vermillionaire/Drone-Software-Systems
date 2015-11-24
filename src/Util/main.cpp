@@ -38,7 +38,7 @@ int main(int argc, char** argv) {
 		signal(SIGQUIT, signalHandler);
 
 
-		/*
+
     DataControl *co = new DataControl();
 
 
@@ -62,7 +62,19 @@ int main(int argc, char** argv) {
 		//wp.startServer();
 
     std::cout << "Running\n";
-		while (DataControl::ready && co->errorCheck()) {}
+		int error_counter = 0;
+		while (DataControl::ready) {
+			if (!co->errorCheck() && DataControl::ready) {
+				std::cout << "Kinect device encontered an error, attempting to reconnect... (" << ++error_counter << ")" << std::endl;
+				co->clean_restart();
+				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+				if (error_counter > 15)
+					DataControl::ready = false;
+			}
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		}
 
     Log::outln("All done.");
     //Log::outln(DataControl::ready, "Ready value.");
@@ -88,7 +100,7 @@ int main(int argc, char** argv) {
 //		while (true) {};
 		//seg fault
 		//wp.stopServer();
-		*/
+
 
 
 		string port = "/dev/ttyPS0";
@@ -111,6 +123,8 @@ int main(int argc, char** argv) {
 		std::cout << angle_buff << std::endl;
 		*/
 
+
+/*
 		Serial ser;
 		ser.open(port);
 		ser.start_read();
@@ -120,6 +134,7 @@ int main(int argc, char** argv) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 		ser.stop_read();
 		ser.close();
+		*/
 
     return 0;
 }

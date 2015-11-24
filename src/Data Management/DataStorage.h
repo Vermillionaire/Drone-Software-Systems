@@ -2,6 +2,9 @@
 //#include <pcl/io/pcd_io.h>
 //#include <pcl/point_types.h>
 #include <string>
+#include <thread>
+#include <mutex>
+#include <atomic>
 
 class DataStorage {
 	public:
@@ -17,6 +20,7 @@ class DataStorage {
     int counter;
 		int file_num;
 		std::string buffer;
+		std::mutex mutex;
 
 
 };

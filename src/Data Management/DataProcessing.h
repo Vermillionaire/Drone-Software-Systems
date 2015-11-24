@@ -8,6 +8,9 @@
  #include "Log.h"
  #include "e_hal.h"
  #include "e_loader.h"
+ #include <thread>
+ #include <mutex>
+ #include <atomic>
 
 
 class DataProcessing {
@@ -16,6 +19,7 @@ class DataProcessing {
 		~DataProcessing();
 
 		void join();
+    void joinCores();
     int epiphanyInit();
 
     void epiphanyClose();
@@ -30,15 +34,22 @@ class DataProcessing {
     //e_mem_t *mbuf;
     e_epiphany_t *dev;
     DataStorage store;
+    int num_cores = 16;
+    std::mutex mutex;
 
 		std::thread *thread1;
 		std::thread *thread2;
 		std::thread *thread3;
+    std::thread *threads;
 		std::thread *fpsc;
+    std::atomic<int> num_done;
 
+
+    int getId();
 		void compute(int id);
 		void consume(int id);
 		void fpsCounter();
     void epiphanyRun();
+    void epiphanyRunCore();
 
 };
