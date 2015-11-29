@@ -22,21 +22,21 @@ DIR_U=src/Util/
 SRC_U=main.cpp Serial.cpp
 
 DIR_S=src/Special\ Structs/
-SRC_S=SpinArray.cpp
+SRC_S=SpinWrapper.cpp SpinArray.cpp
 
 IDIR=-I$(DIR_D) -Ilibs/libfreenect/include/ -I$(DIR_S) -I$(DIR_U) -I$(EPIPHANY)/tools/host/include -Ilibs/pcl/common/include/ -Ilibs/pcl/io/include/ -I/usr/include/eigen3/ -Ilibs/pcl/build/include
 NAME=drone_camera
 
 default: remote
 
-all: datamanagment structs main epiphany
+all: structs datamanagment main epiphany
 	@mv *.o obj/
 	$(CC) $(CFLAGS) $(OBJS) -o $(NAME) $(LDIR) $(LIBS)
 
 main_only: main
 	$(CC) $(CFLAGS) $(OBJS) -o $(NAME) $(LDIR) $(LIBS)
 
-remote: datamanagment_r structs_r main_r epiphany
+remote: structs_r datamanagment_r main_r epiphany
 	chmod +x cross-compile.sh
 	./cross-compile.sh
 	rm *.o

@@ -42,6 +42,18 @@ void DataStorage::writeToFileBuffer(int x, int y, int z) {
   counter++;
 }
 
+void DataStorage::writeToFileBuffer(std::string s) {
+  std::lock_guard<std::mutex> lock(mutex);
+
+  buffer += s;
+  /*
+  cloud->points[counter].x = x;
+  cloud->points[counter].y = y;
+  cloud->points[counter].z = z;
+  */
+  counter++;
+}
+
 
 bool DataStorage::writeFile() {
   if (counter <= 0)

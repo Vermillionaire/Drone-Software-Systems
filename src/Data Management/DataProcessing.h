@@ -1,55 +1,69 @@
- #include <iostream>
- #include <thread>
- #include <unordered_map>
- #include "Point.h"
- #include "DataControl.h"
- #include "DataStorage.h"
- #include "SpinArray.h"
- #include "Log.h"
- #include "e_hal.h"
- #include "e_loader.h"
- #include <thread>
- #include <mutex>
- #include <atomic>
+#ifndef DATAPROCESSING_H
+#define DATAPROCESSING_H
 
+#include <iostream>
+#include <thread>
+#include <unordered_map>
+#include "Point.h"
+#include "DataStorage.h"
+#include "SpinArray.h"
+#include "Log.h"
+#include "e_hal.h"
+#include "e_loader.h"
+#include <thread>
+#include <mutex>
+#include <atomic>
+#include "SpinWrapper.h"
+#include "Constants.h"
+
+class SpinWrapper;
 
 class DataProcessing {
-	public:
-		DataProcessing();
-		~DataProcessing();
+public:
+	DataProcessing(SpinWrapper *wrapper);
+	~DataProcessing();
 
-		void join();
-    void joinCores();
-    int epiphanyInit();
+	void join();
+  void joinCores();
+  int epiphanyInit();
 
-    void epiphanyClose();
-    void startThread();
-    //std::unordered_map<Point,Point,PointHasher> mymap;
+  void epiphanyClose();
+  void startThread();
 
-    const static int BASE = 0x3E000000;
-    const static int CORE_BUFFER_SIZE = 0x2EE0; //12k
-    //const static int NUM_CORES = 16;
+  bool running = true;
+  //std::unordered_map<Point,Point,PointHasher> mymap;
 
-	private:
-    //e_mem_t *mbuf;
-    e_epiphany_t *dev;
-    DataStorage store;
-    int num_cores = 16;
-    std::mutex mutex;
+  //const static int BASE = 0x3E000000;
+  //const static int CORE_BUFFER_SIZE = 0x2EE0; //12k
+  //const static int NUM_CORES = 16;
 
-		std::thread *thread1;
-		std::thread *thread2;
-		std::thread *thread3;
-    std::thread *threads;
-		std::thread *fpsc;
-    std::atomic<int> num_done;
+private:
+  //e_mem_t *mbuf;
+  e_epiphany_t *dev;
+  DataStorage store;
+  int num_cores = 16;
+  std::mutex mutex;
+  bool end_monitor;
+
+	std::thread *thread1;
+	std::thread *thread2;
+	std::thread *thread3;
+  std::thread *threads;
+	std::thread *fpsc;
+  std::atomic<int> num_done;
+
+  SpinWrapper* buffer_getter;
 
 
-    int getId();
-		void compute(int id);
-		void consume(int id);
-		void fpsCounter();
-    void epiphanyRun();
-    void epiphanyRunCore();
+  int getId();
+	void compute(int id);
+	void consume(int id);
+	void fpsCounter();
+  void epiphanyRun();
+  void epiphanyRunPerCore();
+  void epiphanyCoreMonitor();
+  void epiphanyHostMonitor();
 
 };
+
+#endif

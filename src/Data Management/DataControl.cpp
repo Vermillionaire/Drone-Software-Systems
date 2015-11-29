@@ -7,13 +7,17 @@
 
 using namespace std;
 
-SpinArray DataControl::buff(DataControl::width*DataControl::height*30);
+SpinWrapper DataControl::buffer_io;
 //fstream DataControl::file("/dev/ttyPS0", ios::in | ios::out | ios::app);
-boost::asio::io_service DataControl::ios;
-boost::asio::serial_port DataControl::sp(ios, "/dev/ttyPS0");
-unsigned char DataControl::angle_buff[20];
+//boost::asio::io_service DataControl::ios;
+//boost::asio::serial_port DataControl::sp(ios, "/dev/ttyPS0");
+//unsigned char DataControl::angle_buff[20];
 
-bool DataControl::ready = false;
+long DataControl::frames = 0;
+int DataControl::flimiter = 5;
+
+/*
+bool ready = false;
 long DataControl::frames = 0;
 long DataControl::frameLimiter = 0;
 
@@ -23,54 +27,26 @@ double DataControl::gett = 0.0;
 int DataControl::gcount = 0;
 double DataControl::ctimer = 0.0;
 int DataControl::ccount = 0;
+*/
 
 void DataControl::localCallback(freenect_device *ldev, void *data, uint32_t tm) {
 
-  auto start = std::chrono::high_resolution_clock::now();
   DataControl::frames++;
+  Constants constants;
 
-  string s = "1";
-  //std::string result = "                       ";
-  //sp.async_read_some(boost::asio::buffer(result.c_str(),result.size()), nullptr);
-  boost::asio::write(sp,boost::asio::buffer(s.c_str(),s.size()));
-
-
-
-//  DataControl::file << "1";
-  //DataControl::file >> get;
-  //cout << result << endl;
-
-
+  SpinArray* sa = buffer_io.putterArray();
   short * fm = (short*) data;
-  buff.put(fm, DataControl::width, DataControl::height);
-  auto finish = std::chrono::high_resolution_clock::now();
+  sa->put(fm, constants.FRAME_WIDTH, constants.FRAME_HEIGHT);
 
-  DataControl::timer += std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start).count();
-  DataControl::tcount++;
-  /*
-  buff.lock();
-  //std::cout << "Starting loop\n";
+  if (sa->didPutOverflow())
+    DataControl::flimiter += 10;
 
-  for (int i=0; i<480; i++) {
-    for (int j=0; j<640; j++) {
-      int pos = DataControl::width*i+j;
-
-
-      buff.put(fm[pos], i, j);
-    }
-  }
-  buff.unlock();
-  */
-
-  //DataControl::ready = false;
-  //std::this_thread::sleep_for(std::chrono::milliseconds(frameLimiter));
-  std::this_thread::sleep_for(std::chrono::milliseconds(5));
-
-};
+  std::this_thread::sleep_for(std::chrono::milliseconds(30));
+}
 
 
 bool DataControl::errorCheck() {
-    if (freenect_process_events(ctx) >= 0 && DataControl::ready) {
+    if (freenect_process_events(ctx) >= 0 && ready) {
         error_state = true;
         return true;
       }
@@ -81,9 +57,20 @@ bool DataControl::errorCheck() {
       return false;
 }
 
+bool DataControl::isReady() {
+  return ready;
+}
+
+void DataControl::kill() {
+  ready = false;
+  coprocessor->running = false;
+}
+
+
 DataControl::DataControl() {
 
-
+  coprocessor = new DataProcessing(&DataControl::buffer_io);
+  Constants C;
   //boost::asio::serial_port sp(ios, "/dev/ttyPS0");
   //using namespace boost::asio;
   //sp.set_option(boost::asio::serial_port::baud_rate(115200));
@@ -93,7 +80,7 @@ DataControl::DataControl() {
     //Initialize the library
 	int ret = freenect_init(&ctx, NULL);
 	if (ret < 0) {
-        DataControl::ready = false;
+        ready = false;
         return;
 	}
 	Log::outln(ret, "Initialized library.");
@@ -106,11 +93,11 @@ DataControl::DataControl() {
   //Check if there are devices to connect to
   ret = freenect_num_devices(ctx);
   if (ret < 0) {
-      DataControl::ready = false;
+      ready = false;
       return;
     }
 	else if (ret == 0) {
-        DataControl::ready = false;
+        ready = false;
         Log::outln("No Devices were detected");
         return;
 	}
@@ -119,14 +106,14 @@ DataControl::DataControl() {
     //Open the camera device
 	ret = freenect_open_device(ctx, &dev, 0);
 	if (ret < 0) {
-		DataControl::ready = false;
+		ready = false;
 		return;
 	}
 	Log::outln(ret, "Device opened.");
 
   //Set IR brightness to max
-  ret = freenect_set_ir_brightness(dev, 30);
-  Log::outln(ret, "Brightness set to " + std::to_string(DataControl::brightness) );
+  ret = freenect_set_ir_brightness(dev, C.IR_BIRGHTNESS);
+  Log::outln(ret, "Brightness set to " + std::to_string(C.IR_BIRGHTNESS) );
 
   //Set the callback for retrieving data
   freenect_set_depth_callback(dev, localCallback);
@@ -137,7 +124,7 @@ DataControl::DataControl() {
 	if (ret < 0) {
 		//freenect_shutdown(ctx);
 		//freenect_close_device(dev);
-		DataControl::ready = false;
+		ready = false;
 		return;
 	}
   Log::outln(ret, "Set depth mode.");
@@ -147,39 +134,48 @@ DataControl::DataControl() {
   if (ret < 0) {
      //freenect_close_device(dev);
 	//freenect_shutdown(ctx);
-	DataControl::ready = false;
+	ready = false;
 	return;
   }
 	Log::outln(ret, "Started debth.");
 
   //Flag to indicated the device is ready and running
-  DataControl::ready = true;
-  Log::outln("Finished initializing the device");
+  ready = true;
+  Log::outln("Finished initializing the camera device");
+
+  ret = coprocessor->epiphanyInit();
+  if (ret != 0)
+    coprocessor->epiphanyClose();
+
+  coprocessor->startThread();
 
 
 }
 
+/*
 void DataControl::serial_callback(const boost::system::error_code& error, std::size_t bytes_transferred) {
   cout << "Read " << bytes_transferred << " bytes" << endl;
-}
-
+}*/
 
 //Closes down the connect when the object is destroyed
 DataControl::~DataControl() {
     Log::outln("Device is shutting down!");
 
     if (dev != nullptr) {
-      //freenect_stop_depth(dev);
       freenect_close_device(dev);
     }
     if (ctx != nullptr)
       freenect_shutdown(ctx);
-  //  if (file != nullptr)
-      //file.close();
+
+      coprocessor->join();
+  		coprocessor->epiphanyClose();
+
 }
 
 int DataControl::clean_restart() {
   std::cout << "Cleaning up old freenect context." << std::endl;
+
+  Constants C;
 
   if (dev != nullptr)
     freenect_close_device(dev);
@@ -219,8 +215,8 @@ int DataControl::clean_restart() {
   	Log::outln(ret, "Device opened.");
 
     //Set IR brightness to max
-    ret = freenect_set_ir_brightness(dev, 30);
-    Log::outln(ret, "Brightness set to " + std::to_string(DataControl::brightness) );
+    ret = freenect_set_ir_brightness(dev, C.IR_BIRGHTNESS);
+    Log::outln(ret, "Brightness set to " + std::to_string(C.IR_BIRGHTNESS) );
 
     //Set the callback for retrieving data
     freenect_set_depth_callback(dev, localCallback);

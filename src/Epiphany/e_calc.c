@@ -16,6 +16,7 @@ typedef struct {
 } header;
 
 int BASE = 0x8E000000;
+int MULT = 10;
 //int BUFF_SIZE = 16000;
 int DEBUG = 0;
 int DEBUG_OFFSET = 0x8;
@@ -26,7 +27,7 @@ const float scaleFactor = .0021f;
 //half width and height
 const float w2 = 320.0f;
 const float h2 = 240.0f;
-const int MAX_SIZE = 10000;
+const int MAX_SIZE = 1000;
 const int SLEEP_TIME = 10; //1 cycle ~ 1 ns
 
 //Core Status numbers
@@ -74,6 +75,30 @@ void printNum(int num) {
   writeDebug(characters, 10);
 }
 
+void calc(void* address) {
+  int i;
+  point p[MAX_SIZE];
+  e_dma_copy( &p, address, sizeof(point)*MAX_SIZE);
+
+  for (i = 0; i < MAX_SIZE; i++) {
+    int z = p[i].z;
+    if ( z <= 0 || z > 10000) {
+      p[i].x = -1;
+      p[i].y = -1;
+      p[i].z = -1;
+    }
+    else {
+
+      p[i].x = (int)((((float)p[i].x - w2) * ((float)p[i].z + minDistance)) * scaleFactor * 0.1f);
+      p[i].y = (int)((((float)p[i].y - w2) * ((float)p[i].z + minDistance)) * scaleFactor * 0.1f);
+      p[i].z = (int)((float)p[i].z * 0.1f);
+
+    }
+  }
+
+  e_dma_copy( address, &p, sizeof(point)*MAX_SIZE);
+}
+
 
 int main(void) {
   int core_num = 0;
@@ -105,7 +130,7 @@ int main(void) {
   h.size = 500;
 
   //Changes the base address for the specific core data
-  BASE += (HEADER_SIZE + sizeof(point)*MAX_SIZE)*(core_num - 1);
+  BASE += (HEADER_SIZE + sizeof(point)*MAX_SIZE*MULT)*(core_num - 1);
 
   writeCoreStatus(1);
   //h = readHeader((void*)BASE);
@@ -147,20 +172,14 @@ int main(void) {
       continue;
     }
 
-    //Catch some data size errors
-    if (h.size > MAX_SIZE || h.size <= 0) {
-      if (h.core_status != 8)
-        writeCoreStatus(8);
-      continue;
-    }
-
-    //Allocate array for the data and copy it to the core
-    point p[1000];
-    e_dma_copy( &p, (void*)(BASE + 0x0C), sizeof(point)*1000);
-
 
     int i=0;
     writeCoreStatus(7);
+
+    /*
+    //Allocate array for the data and copy it to the core
+    e_dma_copy( &p, (void*)(BASE + 0x0C), sizeof(point)*MAX_SIZE);
+
     for (i = 0; i < h.size; i++) {
       int z = p[i].z;
       if ( z <= 0 || z > 10000) {
@@ -169,26 +188,29 @@ int main(void) {
         p[i].z = -1;
       }
       else {
-        //s = "\nBefore: ";
-        //writeDebug(s, 9);
-        //printNum(p[i].z);
 
         p[i].x = (int)((((float)p[i].x - w2) * ((float)p[i].z + minDistance)) * scaleFactor * 0.1f);
         p[i].y = (int)((((float)p[i].y - w2) * ((float)p[i].z + minDistance)) * scaleFactor * 0.1f);
         p[i].z = (int)((float)p[i].z * 0.1f);
 
-        //s = "\nAfter: ";
-        //writeDebug(s, 8);
-        //printNum(p[i].z);
       }
     }
 
-
-    e_dma_copy( (void*)(BASE + 0x0C), &p, sizeof(point)*h.size);
+    e_dma_copy( (void*)(BASE + 0x0C), &p, sizeof(point)*rem);
     comp_num++;
+    */
+    for (i=0; i<MULT; i++) {
+      calc((void*)(BASE + 0x0C + i*1000*sizeof(point)));
+      comp_num++;
+    }
+    /*
+    calc((void*)(BASE + 0x0C));
+    calc((void*)(BASE + 0x0C + 1000*sizeof(point)));
+    comp_num++;
+    comp_num++;
+    */
+
     writeCoreStatus(2);
-
-
   }
 
   writeCoreStatus(3);

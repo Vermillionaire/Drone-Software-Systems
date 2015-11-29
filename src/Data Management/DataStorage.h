@@ -12,6 +12,7 @@ class DataStorage {
 		~DataStorage();
 
     void writeToFileBuffer(int x, int y, int z);
+		void writeToFileBuffer(std::string s);
 		bool writeFile();
 		int getBufferLength();
 

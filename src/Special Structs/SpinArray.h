@@ -15,13 +15,13 @@ class SpinArray{
         ~SpinArray();
 
         std::mutex mutex;
-        std::mutex other;
 
 
         //flag gets
         bool isOverwriting();
         bool isOverflowing();
         long getLossCount();
+        bool didPutOverflow();
 
 
 
@@ -39,13 +39,12 @@ class SpinArray{
         void lock();
         void unlock();
 
-        int getGot();
-        int getPut();
 
     private:
         //flags
         bool overwrite;
         bool overflow;
+        bool lastOverflow;
         long lossCounter;
 
         PointKey* top;
@@ -54,8 +53,6 @@ class SpinArray{
         long length;
         std::atomic<long> distance;
 
-        int putVal;
-        int gotVal;
 
 
 

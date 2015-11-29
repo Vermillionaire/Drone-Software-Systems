@@ -1,8 +1,8 @@
 #!/bin/bash
 
-scp *.o parallella@parallella:~/Projects/Drone-Software-Systems/obj
-scp e_calc.* parallella@parallella:~/Projects/Drone-Software-Systems
-ssh parallella@parallella 'export EPIPHANY_HOME=/opt/adapteva/esdk; cd Projects/Drone-Software-Systems; make remote_link'
+scp *.o parallella@parallella:~/storage/Projects/Drone-Software-Systems/obj
+scp e_calc.* parallella@parallella:~/storage/Projects/Drone-Software-Systems
+ssh parallella@parallella 'export EPIPHANY_HOME=/opt/adapteva/esdk; cd storage/Projects/Drone-Software-Systems; make remote_link'
 
 
 #scp -P 1942 *.o bmv@107.161.21.122:~/drone

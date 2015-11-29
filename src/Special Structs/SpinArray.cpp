@@ -13,10 +13,9 @@ SpinArray::SpinArray(const int arraySize) {
     overwrite = false;
     overflow = false;
     lossCounter = 0;
+    lastOverflow = false;
 
-    putVal = 0;
-    gotVal = 0;
-};
+}
 
 SpinArray::~SpinArray() {
     //for (int i=0; i<length; i++)
@@ -24,38 +23,45 @@ SpinArray::~SpinArray() {
           //  delete top[i];
 
     delete[] top;
-};
+}
 
 bool SpinArray::isOverwriting() {
     return overwrite;
-};
+}
 
 bool SpinArray::isOverflowing() {
     return overflow;
-};
+}
 
 long SpinArray::getLossCount() {
     return lossCounter;
-};
+}
+
+bool SpinArray::didPutOverflow() {
+  bool o = lastOverflow;
+  lastOverflow = false;
+  return o;
+}
 
 void SpinArray::setOverwrite(bool over) {
     overwrite = over;
-};
+}
 
 void SpinArray::resetCount() {
     lossCounter = 0;
-};
+}
 
 
 bool SpinArray::put(short depth, short i, short j) {
   //std::lock_guard<std::mutex> lock(mutex);
 
-
+  /*
   if (length/2 < distance && DataControl::frameLimiter != 500)
     DataControl::frameLimiter++;
   else
     if (DataControl::frameLimiter != 0)
       DataControl::frameLimiter--;
+      */
 
   if (overflow && !overwrite) {
       lossCounter++;
@@ -79,14 +85,11 @@ bool SpinArray::put(short depth, short i, short j) {
 
   return true;
 
-};
+}
 
 void SpinArray::put(short* frame, int width, int height) {
   std::lock_guard<std::mutex> lock(mutex); {
-  std::unique_lock<std::mutex> mutexLock(other); {
 
-  putVal += (width * height);
-}
 
   //std::cout << "PUTTING" << std::endl;
 
@@ -111,6 +114,7 @@ void SpinArray::put(short* frame, int width, int height) {
 
   if( width * height > length - distance && !over_w) {
     lossCounter += width * height;
+    lastOverflow = true;
     return;
   }
 
@@ -190,10 +194,6 @@ int SpinArray::get(PointKey *array, int size) {
   //std::lock_guard<std::mutex> lock(mutex);
   std::unique_lock<std::mutex> mutexLock(mutex); {
 
-  std::unique_lock<std::mutex> mutexLock(other); {
-
-  gotVal += size;
-}
   //std::cout << "Size requested: " << size << " Distance: " << distance << std::endl;
 
   if (size > distance) {
@@ -317,18 +317,4 @@ void SpinArray::lock() {
 
 void SpinArray::unlock() {
   mutex.unlock();
-}
-
-int SpinArray::getGot() {
-  std::lock_guard<std::mutex> lock(other);
-  int ret = gotVal;
-  gotVal = 0;
-  return ret;
-}
-
-int SpinArray::getPut() {
-  std::lock_guard<std::mutex> lock(other);
-  int ret = putVal;
-  putVal = 0;
-  return ret;
 }
