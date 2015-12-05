@@ -87,7 +87,7 @@ bool SpinArray::put(short depth, short i, short j) {
 
 }
 
-void SpinArray::put(short* frame, int width, int height) {
+void SpinArray::put(short* frame, int width, int height, int angle) {
   std::lock_guard<std::mutex> lock(mutex); {
 
 
@@ -133,7 +133,7 @@ void SpinArray::put(short* frame, int width, int height) {
       p.z = frame[row+j];
       p.x = j;
       p.y = i;
-      p.key = 0;
+      p.angle = angle;
 
       //std::cout << point_size << "\t" << add << "\t" << distance << "\t" << tail   << "\t" << i << "\t" << j << "\n";
       memcpy( &(top[add]), &p, point_size);

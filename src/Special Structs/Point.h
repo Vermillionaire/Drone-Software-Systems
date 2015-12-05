@@ -17,7 +17,7 @@ struct PointKey {
   int x;
   int y;
   int z;
-  int key;
+  int angle;
 };
 
 struct PointList {

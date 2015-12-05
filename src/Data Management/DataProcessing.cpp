@@ -315,7 +315,7 @@ void DataProcessing::epiphanyRunPerCore() {
 				e_read(&mbuf, 0, 0, 8, &size, 4);
 				e_read(&mbuf, 0, 0, 12, pArray, sizeof(PointKey)*size);
 
-				
+
 				for(int j=0; j<size; j++) {
 					if (pArray[j].z != 0);
 						store.writeToFileBuffer(pArray[j].x, pArray[j].y, pArray[j].z);
@@ -1030,6 +1030,7 @@ void DataProcessing::fpsCounter() {
 
 void DataProcessing::join() {
 	Log::outln("Waiting for threads...");
+	store.writeFile();
 	//thread1->join();
 	joinCores();
 	fpsc->join();

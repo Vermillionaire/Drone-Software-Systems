@@ -19,7 +19,7 @@ DIR_E=src/Epiphany/
 SRC_E=e_calc.c
 
 DIR_U=src/Util/
-SRC_U=main.cpp Serial.cpp
+SRC_U=main.cpp
 
 DIR_S=src/Special\ Structs/
 SRC_S=SpinWrapper.cpp SpinArray.cpp

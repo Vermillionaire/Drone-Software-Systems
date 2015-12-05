@@ -9,13 +9,9 @@
 #include <string>
 #include <thread>
 #include <string.h>
-//#include <fstream>
-//#include <iostream>
-//#include <boost/asio.hpp>
+
 
 using namespace std;
-//class SpinArray;
-//using namespace boost::asio;
 class SpinWrapper;
 class DataProcessing;
 
@@ -66,9 +62,19 @@ class DataControl
         freenect_device* dev;
 
     private:
+        struct serial_package {
+        	short header;
+        	int heading;
+        };
 
         static SpinWrapper buffer_io;
         DataProcessing* coprocessor;
+
+        void serial_thread_func();
+        bool serial_thread_running;
+        static int angle;
+        std::thread* serial_thread;
+
         //Constants constants;
 
         bool ready = false;

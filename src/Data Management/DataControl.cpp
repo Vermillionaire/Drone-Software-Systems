@@ -2,6 +2,11 @@
 #include "Log.h"
 #include <thread>
 #include <chrono>
+#include <termios.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <fcntl.h>
 #include "boost/bind.hpp"
 
 
@@ -15,6 +20,7 @@ SpinWrapper DataControl::buffer_io;
 
 long DataControl::frames = 0;
 int DataControl::flimiter = 5;
+int DataControl::angle = 0;
 
 /*
 bool ready = false;
@@ -36,7 +42,7 @@ void DataControl::localCallback(freenect_device *ldev, void *data, uint32_t tm) 
 
   SpinArray* sa = buffer_io.putterArray();
   short * fm = (short*) data;
-  sa->put(fm, constants.FRAME_WIDTH, constants.FRAME_HEIGHT);
+  sa->put(fm, constants.FRAME_WIDTH, constants.FRAME_HEIGHT, angle);
 
   if (sa->didPutOverflow())
     DataControl::flimiter += 10;
@@ -143,13 +149,16 @@ DataControl::DataControl() {
   ready = true;
   Log::outln("Finished initializing the camera device");
 
+  serial_thread = new std::thread(&DataControl::serial_thread_func, this);
+
+  /*
   ret = coprocessor->epiphanyInit();
   if (ret != 0)
     coprocessor->epiphanyClose();
 
+
   coprocessor->startThread();
-
-
+  */
 }
 
 /*
@@ -160,6 +169,8 @@ void DataControl::serial_callback(const boost::system::error_code& error, std::s
 //Closes down the connect when the object is destroyed
 DataControl::~DataControl() {
     Log::outln("Device is shutting down!");
+
+    serial_thread_running = false;
 
     if (dev != nullptr) {
       freenect_close_device(dev);
@@ -241,4 +252,84 @@ int DataControl::clean_restart() {
     Log::outln("Finished reinitializing the device");
 
     return 0;
+}
+
+void DataControl::serial_thread_func() {
+  serial_thread_running = true;
+
+  Log::outln("Opening serial port.");
+	int serial_fd = open("/dev/ttyPS0", O_RDONLY | O_NOCTTY);
+
+	unsigned speed = 115200;
+
+	if (serial_fd < 0) {
+		Log::outln("Could not open serial port!");
+    return;
+	}
+
+	/* Try to set baud rate */
+	struct termios uart_config;
+	int termios_state;
+
+  Log::outln("Setting configurations.");
+	/* Back up the original uart configuration to restore it after exit */
+	if ((termios_state = tcgetattr(serial_fd, &uart_config)) < 0) {
+    Log::outln("Serial port config error!");
+		close(serial_fd);
+		return;
+	}
+
+  cfsetispeed(&uart_config, B115200);
+  cfsetospeed(&uart_config, B115200);
+
+	/* Clear ONLCR flag (which appends a CR for every LF)
+	uart_config.c_oflag &= ~ONLCR;
+
+
+	if (cfsetispeed(&uart_config, speed) < 0 || cfsetospeed(&uart_config, speed) < 0) {
+    Log::outln("Could not set baud rate!");
+		close(serial_fd);
+		return;
+	}
+
+	if ((termios_state = tcsetattr(serial_fd, TCSANOW, &uart_config)) < 0) {
+    Log::outln("Could not set more configs!");
+		close(serial_fd);
+		return;
+	}*/
+
+  unsigned char buff[8];
+  for(int i=0; i<8; i++)
+    buff[i] = 0;
+
+  Log::outln("Starting read loop.");
+  while (serial_thread_running) {
+    int num = read(serial_fd, buff, sizeof(buff));
+    //Log::outln("Got something.");
+  //  struct serial_package pack;
+
+    if (buff[0] != 0xFA) {
+      Log::outln("Synchronizing byte stream.");
+
+      printf(" %d %2x %2x %2x %2x %2x %2x %2x %2x ", num, buff[0], buff[1], buff[2], buff[3], buff[4], buff[5], buff[6], buff[7]);
+
+      for (int i=1; i<8; i++) {
+        if (buff[i] == 0xFA){
+          if (i+1 == 8) {
+            char tmp[7];
+            num = read(serial_fd, tmp, sizeof(tmp));
+          }
+          else if (buff[i+1] == 0xFF) {
+            char tmp[i];
+            num = read(serial_fd, tmp, sizeof(tmp));
+            break;
+          }
+        }
+      }
+    }
+    else {
+      DataControl::angle = ((int)buff[5]<<8) + ((int)buff[4]);
+    }
+  }
+
 }
