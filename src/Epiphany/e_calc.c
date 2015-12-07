@@ -1,12 +1,13 @@
 #include "e_lib.h"
-#include <string.h>
+//#include "pal.h"
+#include <math.h>
 #include <stdlib.h>
 
 typedef struct {
   int x;
   int y;
   int z;
-  int hash;
+  int angle;
 } point;
 
 typedef struct {
@@ -16,7 +17,7 @@ typedef struct {
 } header;
 
 int BASE = 0x8E000000;
-int MULT = 10;
+int MULT = 100;
 //int BUFF_SIZE = 16000;
 int DEBUG = 0;
 int DEBUG_OFFSET = 0x8;
@@ -27,7 +28,7 @@ const float scaleFactor = .0021f;
 //half width and height
 const float w2 = 320.0f;
 const float h2 = 240.0f;
-const int MAX_SIZE = 1000;
+const int MAX_SIZE = 100;
 const int SLEEP_TIME = 10; //1 cycle ~ 1 ns
 
 //Core Status numbers
@@ -80,6 +81,9 @@ void calc(void* address) {
   point p[MAX_SIZE];
   e_dma_copy( &p, address, sizeof(point)*MAX_SIZE);
 
+  float angle = 0.0f;
+  float c = 0.0f;
+  float s = 0.0f;
   for (i = 0; i < MAX_SIZE; i++) {
     int z = p[i].z;
     if ( z <= 0 || z > 10000) {
@@ -88,14 +92,19 @@ void calc(void* address) {
       p[i].z = -1;
     }
     else {
-
-      p[i].x = (int)((((float)p[i].x - w2) * ((float)p[i].z + minDistance)) * scaleFactor * 0.1f);
-      p[i].y = (int)((((float)p[i].y - w2) * ((float)p[i].z + minDistance)) * scaleFactor * 0.1f);
-      p[i].z = (int)((float)p[i].z * 0.1f);
-
+      angle = ((float)p[i].angle)*M_PI/180.0f;
+      c = cosf(angle);
+      s = sinf(angle);
+      float x = (((float)p[i].x - w2) * ((float)p[i].z + minDistance)) * scaleFactor;
+      float y = (((float)p[i].y - w2) * ((float)p[i].z + minDistance)) * scaleFactor;
+      float z = (float)p[i].z;
+      //p[i].x = (int)(z*c - y*s);
+      //p[i].y = (int)(y*c - z*s);
+      p[i].x = (int) z;
+      p[i].y = (int) y;
+      p[i].z = (int) x;
     }
   }
-
   e_dma_copy( address, &p, sizeof(point)*MAX_SIZE);
 }
 
@@ -200,7 +209,7 @@ int main(void) {
     comp_num++;
     */
     for (i=0; i<MULT; i++) {
-      calc((void*)(BASE + 0x0C + i*1000*sizeof(point)));
+      calc((void*)(BASE + 0x0C + i*MAX_SIZE*sizeof(point)));
       comp_num++;
     }
     /*
@@ -218,12 +227,10 @@ int main(void) {
   writeDebug(s, 21);
   printNum(comp_num);
 
-  writeCoreStatus(4);
   s = "\nSleeps: ";
   writeDebug(s, 9);
   printNum(num_sleeps);
 
-  writeCoreStatus(5);
   s = "\nCycles: ";
   writeDebug(s, 9);
   printNum(num_cycles);
