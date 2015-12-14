@@ -12,7 +12,7 @@
 
 using namespace std;
 
-SpinWrapper DataControl::buffer_io;
+//SpinArray DataControl::buffer;
 //fstream DataControl::file("/dev/ttyPS0", ios::in | ios::out | ios::app);
 //boost::asio::io_service DataControl::ios;
 //boost::asio::serial_port DataControl::sp(ios, "/dev/ttyPS0");
@@ -21,7 +21,10 @@ SpinWrapper DataControl::buffer_io;
 long DataControl::frames = 0;
 int DataControl::flimiter = 5;
 int DataControl::angle = 0;
+bool DataControl::recording = false;
+DataStorage* DataControl::store;
 
+//SpinArray* DataControl::buffer = new SpinArray(640*480*120);
 /*
 bool ready = false;
 long DataControl::frames = 0;
@@ -37,17 +40,20 @@ int DataControl::ccount = 0;
 
 void DataControl::localCallback(freenect_device *ldev, void *data, uint32_t tm) {
 
-  DataControl::frames++;
-  Constants constants;
+  if (DataControl::recording) {
+    //DataControl::frames++;
+    //Constants constants;
 
-  SpinArray* sa = buffer_io.putterArray();
-  short * fm = (short*) data;
-  sa->put(fm, constants.FRAME_WIDTH, constants.FRAME_HEIGHT, angle);
+    //SpinArray* sa = buffer_io.putterArray();
+    short * fm = (short*) data;
+    //DataControl::buffer->put(fm, constants.FRAME_WIDTH, constants.FRAME_HEIGHT, angle);
+    store->writeToFileBuffer(fm, 640, 480, DataControl::angle);
 
-  if (sa->didPutOverflow())
-    DataControl::flimiter += 10;
+    //if (DataControl::buffer->didPutOverflow())
+    //  DataControl::flimiter += 10;
 
-  std::this_thread::sleep_for(std::chrono::milliseconds(30));
+    //std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  }
 }
 
 
@@ -69,14 +75,14 @@ bool DataControl::isReady() {
 
 void DataControl::kill() {
   ready = false;
-  coprocessor->running = false;
+  //coprocessor->running = false;
 }
 
 
 DataControl::DataControl() {
 
-  coprocessor = new DataProcessing(&DataControl::buffer_io);
-  Constants C;
+//  coprocessor = new DataProcessing();
+  //Constants C;
   //boost::asio::serial_port sp(ios, "/dev/ttyPS0");
   //using namespace boost::asio;
   //sp.set_option(boost::asio::serial_port::baud_rate(115200));
@@ -118,8 +124,8 @@ DataControl::DataControl() {
 	Log::outln(ret, "Device opened.");
 
   //Set IR brightness to max
-  ret = freenect_set_ir_brightness(dev, C.IR_BIRGHTNESS);
-  Log::outln(ret, "Brightness set to " + std::to_string(C.IR_BIRGHTNESS) );
+  ret = freenect_set_ir_brightness(dev, 50);
+  Log::outln(ret, "Brightness set to " + std::to_string(50) );
 
   //Set the callback for retrieving data
   freenect_set_depth_callback(dev, localCallback);
@@ -149,16 +155,21 @@ DataControl::DataControl() {
   ready = true;
   Log::outln("Finished initializing the camera device");
 
-  serial_thread = new std::thread(&DataControl::serial_thread_func, this);
+  DataControl::store = new DataStorage();
+  //serial_thread = new std::thread(&DataControl::serial_thread_func, this);
 
-  /*
+
+  DataControl::recording = true;
+/*
   ret = coprocessor->epiphanyInit();
   if (ret != 0)
     coprocessor->epiphanyClose();
 
-
+  DataControl::recording = true;
   coprocessor->startThread();
   */
+
+
 }
 
 /*
@@ -178,15 +189,16 @@ DataControl::~DataControl() {
     if (ctx != nullptr)
       freenect_shutdown(ctx);
 
-      coprocessor->join();
-  		coprocessor->epiphanyClose();
+      store->writeFile();
+      //coprocessor->join();
+  		//coprocessor->epiphanyClose();
 
 }
 
 int DataControl::clean_restart() {
   std::cout << "Cleaning up old freenect context." << std::endl;
 
-  Constants C;
+  //Constants C;
 
   if (dev != nullptr)
     freenect_close_device(dev);
@@ -226,8 +238,8 @@ int DataControl::clean_restart() {
   	Log::outln(ret, "Device opened.");
 
     //Set IR brightness to max
-    ret = freenect_set_ir_brightness(dev, C.IR_BIRGHTNESS);
-    Log::outln(ret, "Brightness set to " + std::to_string(C.IR_BIRGHTNESS) );
+    ret = freenect_set_ir_brightness(dev, 50);
+    Log::outln(ret, "Brightness set to " + std::to_string(50) );
 
     //Set the callback for retrieving data
     freenect_set_depth_callback(dev, localCallback);
@@ -297,6 +309,10 @@ void DataControl::serial_thread_func() {
 		close(serial_fd);
 		return;
 	}*/
+  bool angle90 = false;
+  bool angle180 = false;
+  bool angle270 = false;
+  bool angle360 = false;
 
   unsigned char buff[8];
   for(int i=0; i<8; i++)
@@ -329,6 +345,45 @@ void DataControl::serial_thread_func() {
     }
     else {
       DataControl::angle = ((int)buff[5]<<8) + ((int)buff[4]);
+      //Log::outln(DataControl::angle, "angle");
+
+      if (DataControl::angle == 0 && !DataControl::recording) {
+        Log::outln("Starting recording");
+        DataControl::recording = true;
+        //coprocessor->running = true;
+        //coprocessor->startThread();
+      }
+      else if(DataControl::angle == 0 && DataControl::recording && angle90 && angle180 && angle270 && angle360) {
+        Log::outln("Stopping recording");
+        DataControl::recording = false;
+        store->writeFile();
+        //std::this_thread::sleep_for(std::chrono::milliseconds(30000));
+        //coprocessor->running = false;
+        //coprocessor->join();
+        //coprocessor->store.writeFile();
+        angle90 = false;
+        angle180 = false;
+        angle270 = false;
+        angle360 = false;
+      }
+      else if (DataControl::angle == 90 && DataControl::recording) {
+        Log::outln("Hit 90");
+        angle90 = true;
+      }
+      else if (DataControl::angle == 180 && DataControl::recording) {
+        Log::outln("Hit 180");
+        angle180 = true;
+      }
+      else if (DataControl::angle == 270 && DataControl::recording) {
+        Log::outln("Hit 270");
+        angle270 = true;
+      }
+      else if (DataControl::angle == 359 && DataControl::recording) {
+        Log::outln("Hit 359");
+        angle360 = true;
+      }
+
+
     }
   }
 

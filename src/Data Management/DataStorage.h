@@ -1,17 +1,22 @@
 //#include <iostream> // std::cout
 //#include <pcl/io/pcd_io.h>
 //#include <pcl/point_types.h>
+
+#ifndef DATASTORAGE_H
+#define DATASTORAGE_H
+
 #include <string>
 #include <thread>
 #include <mutex>
 #include <atomic>
+#include "Log.h"
 
 class DataStorage {
 	public:
 		DataStorage();
 		~DataStorage();
 
-    void writeToFileBuffer(int x, int y, int z);
+		void writeToFileBuffer(short* frame, int width, int height, int angle);
 		void writeToFileBuffer(std::string s);
 		bool writeFile();
 		int getBufferLength();
@@ -25,3 +30,5 @@ class DataStorage {
 
 
 };
+
+#endif

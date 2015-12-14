@@ -16,11 +16,11 @@
 #include "SpinWrapper.h"
 #include "Constants.h"
 
-class SpinWrapper;
+//class SpinWrapp;
 
 class DataProcessing {
 public:
-	DataProcessing(SpinWrapper *wrapper);
+	DataProcessing();
 	~DataProcessing();
 
 	void join();
@@ -31,16 +31,11 @@ public:
   void startThread();
 
   bool running = true;
-  //std::unordered_map<Point,Point,PointHasher> mymap;
-
-  //const static int BASE = 0x3E000000;
-  //const static int CORE_BUFFER_SIZE = 0x2EE0; //12k
-  //const static int NUM_CORES = 16;
+	DataStorage store;
 
 private:
   //e_mem_t *mbuf;
   e_epiphany_t *dev;
-  DataStorage store;
   int num_cores = 16;
   std::mutex mutex;
   bool end_monitor;
@@ -52,7 +47,7 @@ private:
 	std::thread *fpsc;
   std::atomic<int> num_done;
 
-  SpinWrapper* buffer_getter;
+//  SpinWrapper* buffer_getter;
 
 
   int getId();

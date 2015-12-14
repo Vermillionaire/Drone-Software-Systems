@@ -2,9 +2,10 @@
 #define DATACONTROL_H
 
 #include "libfreenect.h"
-#include "SpinArray.h"
-#include "SpinWrapper.h"
-#include "DataProcessing.h"
+//#include "SpinArray.h"
+//#include "SpinArray.h"
+//#include "DataProcessing.h"
+#include "DataStorage.h"
 #include <vector>
 #include <string>
 #include <thread>
@@ -12,8 +13,8 @@
 
 
 using namespace std;
-class SpinWrapper;
-class DataProcessing;
+//class SpinArray;
+//class DataProcessing;
 
 class DataControl
 {
@@ -27,58 +28,32 @@ class DataControl
 
         static void localCallback(freenect_device *ldev, void *data, uint32_t time);
 
-        //const static short width = 640;
-        //const static short height = 480;
-        //const static int size = width * height;
-        //const static short brightness = 50;
-        //static long frameLimiter;
-
-
-
-        //static fstream file;
-        //static io_service ios;
-        //static serial_port sp;
-        //static unsigned char angle_buff[];
-        //void serial_callback(const boost::system::error_code& error, std::size_t bytes_transferred);
         int clean_restart();
 
-        //static SpinArray buff;
-
-        //Temporary variables and functions
-        //static vector<string> outputData;
         static long frames;
         static int flimiter;
-        //put
-      //  static double timer;
-      //  static int tcount;
-        //get
-      //  static double gett;
-      //  static int gcount;
-        //compute
-      //  static double ctimer;
-      //  static int ccount;
+
+        static int angle;
+        static bool recording;
 
         freenect_context* ctx;
         freenect_device* dev;
 
+      //  static SpinArray* buffer;
+
     private:
-        struct serial_package {
-        	short header;
-        	int heading;
-        };
 
-        static SpinWrapper buffer_io;
-        DataProcessing* coprocessor;
-
+      //  DataProcessing* coprocessor;
+        static DataStorage* store;
         void serial_thread_func();
         bool serial_thread_running;
-        static int angle;
         std::thread* serial_thread;
 
         //Constants constants;
 
         bool ready = false;
         bool error_state = false;
+
 
 
 

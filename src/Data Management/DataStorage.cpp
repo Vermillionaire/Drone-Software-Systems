@@ -28,17 +28,17 @@ DataStorage::~DataStorage() {
   writeFile();
 }
 
-void DataStorage::writeToFileBuffer(int x, int y, int z) {
+void DataStorage::writeToFileBuffer(short* frame, int width, int height, int angle) {
   std::lock_guard<std::mutex> lock(mutex);
-  if (z < 0)
-    return;
 
-  buffer += to_string(x) + " " + to_string(y) + " " + to_string(z) + " 1\n";
-  /*
-  cloud->points[counter].x = x;
-  cloud->points[counter].y = y;
-  cloud->points[counter].z = z;
-  */
+  for (int i=0; i<height; i++) {
+    int row = i * width;
+    for (int j=0; j<width; j++) {
+
+      buffer += to_string(frame[row+j]) + " " + to_string(i) + " " + to_string(j) + " " + to_string(angle) + " 1\n";
+    }
+  }
+
   counter++;
 }
 
@@ -56,11 +56,13 @@ void DataStorage::writeToFileBuffer(std::string s) {
 
 
 bool DataStorage::writeFile() {
+  std::lock_guard<std::mutex> lock(mutex);
+  Log::outln("Writing file.");
   if (counter <= 0)
     return false;
 
   ofstream myfile;
-  myfile.open("Scan-Number-" + to_string(file_num) + ".txt");
+  myfile.open("Scan-Number-" + to_string(file_num++) + ".txt");
   myfile << "0\n";
   myfile << counter << "\n";
   myfile << "0 0 0\n";

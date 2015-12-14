@@ -11,8 +11,8 @@
 //const int MAX_GET_SIZE = 1000;
 
 
-DataProcessing::DataProcessing(SpinWrapper* wrapper) {
-	buffer_getter = wrapper;
+DataProcessing::DataProcessing() {
+//	buffer_getter = wrapper;
 };
 
 DataProcessing::~DataProcessing() {
@@ -25,18 +25,14 @@ DataProcessing::~DataProcessing() {
 
 void DataProcessing::startThread() {
 	num_done = 0;
-	//thread1 = new std::thread(&DataProcessing::epiphanyRun, this);
+	thread1 = new std::thread(&DataProcessing::epiphanyRun, this);
 
 	//for (int i=1; i<=16; i++)
-
-
-
+ /*
 	threads = new std::thread[16];
 	for (int i=1; i<=15; i++)
 		threads[i] = std::thread(&DataProcessing::epiphanyRunPerCore, this);
-
-
-
+		*/
 
 	//thread1 = new std::thread(&DataProcessing::epiphanyCoreMonitor, this);
 	fpsc = new std::thread(&DataProcessing::fpsCounter, this);
@@ -276,8 +272,8 @@ void DataProcessing::epiphanyRunPerCore() {
 					}
 					else
 						init_code = 1;
-						SpinArray* sa = buffer_getter->getterArray();
-						size = sa->get(pArray, C.MAX_GET_SIZE);
+						//SpinArray* sa = buffer_getter->getterArray();
+						//size = DataControl::buffer->get(pArray, C.MAX_GET_SIZE);
 
 						if (size <= 0 )
 							break;
@@ -311,7 +307,7 @@ void DataProcessing::epiphanyRunPerCore() {
 				}
 			case 3:
 				size = 0;
-				//std::cout << "Witing data to the cloud.\n";
+				std::cout << "Witing data to File.\n";
 				e_read(&mbuf, 0, 0, 8, &size, 4);
 				e_read(&mbuf, 0, 0, 12, pArray, sizeof(PointKey)*size);
 
@@ -441,7 +437,6 @@ void DataProcessing::epiphanyRun() {
 	int num_errors = 0;
 	PointKey *pArray = new PointKey[C.MAX_GET_SIZE];
 
-	//Ststus code loggers
 	int code_0 = 0;
 	int code_1 = 0;
 	int code_2 = 0;
@@ -560,8 +555,10 @@ void DataProcessing::epiphanyRun() {
 
 
 							  //std::cout << "In "  << std::endl;
-							SpinArray* sa = buffer_getter->getterArray();
-							size = sa->get(pArray, C.MAX_GET_SIZE);
+							//SpinArray* sa = buffer_getter->getterArray();
+							//size = DataControl::buffer->get(pArray, C.MAX_GET_SIZE);
+
+						//	std::cout << " Data1: " << pArray[50].z << " Data2: " << pArray[100].z << std::endl;
 
 							if (size <= 0 )
 								continue;
@@ -583,16 +580,18 @@ void DataProcessing::epiphanyRun() {
 						break;
 					}
 				case 3:
+				//std::cout << "Writing to file\n";
 					size = 0;
-					//std::cout << "Witing data to the cloud.\n";
 					e_read(&mbuf, 0, 0, offset_codes[i]+8, &size, 4);
 					e_read(&mbuf, 0, 0, offset_codes[i]+12, pArray, sizeof(PointKey)*size);
 
-					/*
+
+					//std::cout << "Size: " << size << " Z50: " << pArray[50].z << " Z100: " << pArray[100].z << std::endl;
 					for(int j=0; j<size; j++) {
+
 						if (pArray[j].z != 0);
 							store.writeToFileBuffer(pArray[j].x, pArray[j].y, pArray[j].z);
-					}*/
+					}
 
 					init_code = 2;
 					e_write(&mbuf, 0, 0, offset_codes[i], &init_code, 4);
@@ -943,8 +942,8 @@ void DataProcessing::epiphanyHostMonitor() {
 
 
 							  //std::cout << "In "  << std::endl;
-							SpinArray* sa = buffer_getter->getterArray();
-							size = sa->get(pArray, C.MAX_GET_SIZE);
+						//	SpinArray* sa = buffer_getter->getterArray();
+					//		size = DataControl::buffer->get(pArray, C.MAX_GET_SIZE);
 
 							if (size <= 0 )
 								continue;
@@ -1011,18 +1010,18 @@ void DataProcessing::fpsCounter() {
 	while (running) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
-		SpinArray* sa1 = buffer_getter->getOne();
-		SpinArray* sa2 = buffer_getter->getTwo();
+		//SpinArray* sa1 = buffer_getter->getOne();
+		//SpinArray* sa2 = buffer_getter->getTwo();
 
-		std::cout << "(1)";
-		sa1->printSize();
-		std::cout << "\n(2)";
-		sa2->printSize();
+		//std::cout << "(1)";
+//		DataControl::buffer->printSize();
+		//std::cout << "\n(2)";
+		//sa2->printSize();
 		//int got = DataControl::buff.getGot();
 		//int put = DataControl::buff.getPut();
-		std::cout << " FPS:" << DataControl::frames <<  " Store: " << store.getBufferLength()/1000 << "k" << std::endl;
+	//	std::cout << " FPS:" << DataControl::frames <<  " Store: " << store.getBufferLength()/1000 << "k" << " deg: " << DataControl::angle << " rec: " << DataControl::recording << std::endl;
 		//std::cout << " Got:" << got <<  " Put: " << put << " Percent: " << (float)got/(float)put*100.0f << std::endl;
-		DataControl::frames = 0;
+	//	DataControl::frames = 0;
 		//DataControl::ready = false;
 
 	}
@@ -1031,9 +1030,11 @@ void DataProcessing::fpsCounter() {
 void DataProcessing::join() {
 	Log::outln("Waiting for threads...");
 	store.writeFile();
-	//thread1->join();
-	joinCores();
+	thread1->join();
+	//joinCores();
 	fpsc->join();
+
+	delete thread1;
 	Log::outln("All threads finished.");
 };
 
